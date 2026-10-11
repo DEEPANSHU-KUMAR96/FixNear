@@ -33,3 +33,23 @@ export const vailidLoginUser = [
     .withMessage('Password must be at least 6 characters'),
     validRequest
 ]
+
+export const forgotPasswordValidator = [
+    body("email")
+    .trim()
+    .isEmail()
+    .withMessage("A valid email is required")
+    .normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false }),
+    validRequest,
+];
+
+export const resetPasswordValidator = [
+    body("token")
+    .trim()
+    .notEmpty()
+    .withMessage("Reset token is required"),
+    body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+    validRequest,
+];

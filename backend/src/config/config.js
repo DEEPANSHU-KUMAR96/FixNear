@@ -14,11 +14,17 @@ if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined")
 }
 
+if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error("JWT_REFRESH_SECRET is not defined")
+}
+
 
 export const config = {
 
     PORT: process.env.PORT,
     MONGO_URI: process.env.MONGO_URI,
-    JWT_SECRET: process.env.JWT_SECRET
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+    NODE_ENV: process.env.NODE_ENV
 
 }
