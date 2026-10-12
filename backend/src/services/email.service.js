@@ -1,16 +1,17 @@
 import nodemailer from "nodemailer";
+import { config } from "../config/config.js";
 
 export const isPasswordResetEmailConfigured = () => {
-    const port = Number(process.env.SMTP_PORT);
-    const frontendUrl = process.env.FRONTEND_URL;
+    const port = Number(config.SMTP_PORT);
+    const frontendUrl = config.FRONTEND_URL;
 
     return Boolean(
-        process.env.SMTP_HOST &&
+        config.SMTP_HOST &&
         Number.isInteger(port) &&
         port > 0 &&
-        process.env.SMTP_USER &&
-        process.env.SMTP_PASS &&
-        process.env.SMTP_FROM &&
+        config.SMTP_USER &&
+        config.SMTP_PASS &&
+        config.SMTP_FROM &&
         frontendUrl &&
         URL.canParse(frontendUrl)
     );
@@ -21,22 +22,22 @@ export const sendPasswordResetEmail = async (email, token) => {
         throw new Error("Password reset email settings are incomplete");
     }
 
-    const port = Number(process.env.SMTP_PORT);
-    const resetUrl = new URL("/reset-password", process.env.FRONTEND_URL);
+    const port = Number(config.SMTP_PORT);
+    const resetUrl = new URL("/reset-password", config.FRONTEND_URL);
     resetUrl.searchParams.set("token", token);
 
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
+        host: config.SMTP_HOST,
         port,
         secure: port === 465,
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
+            user: config.SMTP_USER,
+            pass: config.SMTP_PASS,
         },
     });
 
     await transporter.sendMail({
-        from: process.env.SMTP_FROM,
+        from: config.SMTP_FROM,
         to: email,
         subject: "Reset your FixNear password",
         text: `Use this link to reset your password. It expires in 15 minutes:\n\n${resetUrl.toString()}\n\nIf you did not request this, you can ignore this email.`,

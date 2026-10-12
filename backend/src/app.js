@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
 
 import authRouter from './routes/auth.routes.js'
+import issueRouter from './routes/issue.routes.js'
 
 const app = express()
 
@@ -14,7 +15,7 @@ app.use(morgan('dev'))
 
 
 app.use("/api/auth", authRouter)
-
+app.use("/api/issues", issueRouter)
 
 
 export default app;

@@ -17,6 +17,12 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.JWT_REFRESH_SECRET) {
     throw new Error("JWT_REFRESH_SECRET is not defined")
 }
+if (!process.env.SMTP_USER) {
+    throw new Error("SMTP_USER is not defined")
+}
+if (!process.env.SMTP_PASS) {
+    throw new Error("SMTP_PASS is not defined")
+}
 
 
 export const config = {
@@ -25,6 +31,8 @@ export const config = {
     MONGO_URI: process.env.MONGO_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
     NODE_ENV: process.env.NODE_ENV
 
 }
