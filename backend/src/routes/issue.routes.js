@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import { createIssue, getIssue, getSingleIssue, updateIssue } from '../controllers/issue.controller.js';
+import { createIssue, deleteIssue, getIssue, getSingleIssue, updateIssue } from '../controllers/issue.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { createIssueValidator } from '../validators/issue.validator.js';
 
@@ -16,6 +16,6 @@ router.get('/:id', protect, getSingleIssue)
 
 router.patch('/:id', protect, updateIssue)
 
-router.delete('/:id')
+router.delete('/:id', protect, deleteIssue)
 
 export default router

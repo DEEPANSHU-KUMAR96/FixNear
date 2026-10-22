@@ -126,3 +126,31 @@ export const updateIssue = async (req, res) => {
         });
     }
 };
+
+export const deleteIssue = async (req, res) => {
+    try {
+        const issue = await Issue.findOneAndDelete({
+            _id: req.params.id,
+            createdBy: req.user._id,
+        })
+
+        if (!issue) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not find"
+            })
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Issue deleted succesfully"
+        })
+    } catch (error) {
+        console.error("Failed to delete issue:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Error deleting issue",
+        });
+    }
+
+}
