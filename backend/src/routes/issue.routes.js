@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import { createIssue, getIssue, getSingleIssue } from '../controllers/issue.controller.js';
+import { createIssue, getIssue, getSingleIssue, updateIssue } from '../controllers/issue.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { createIssueValidator } from '../validators/issue.validator.js';
 
@@ -12,6 +12,10 @@ router.post('/create', protect, createIssueValidator, createIssue)
 router.get('/get-issue', protect, getIssue)
 
 
-router.get('/issues/:id', protect, getSingleIssue)
+router.get('/:id', protect, getSingleIssue)
+
+router.patch('/:id', protect, updateIssue)
+
+router.delete('/:id')
 
 export default router
