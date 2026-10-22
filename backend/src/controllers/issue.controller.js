@@ -154,3 +154,54 @@ export const deleteIssue = async (req, res) => {
     }
 
 }
+
+export const updateIssueStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        const allowedStatuses = [
+            "Reported",
+            "In Progress",
+            "Resolved",
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid issue status",
+            });
+        }
+
+        const issue = await Issue.findById(req.params.id);
+
+        if (!issue) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found",
+            });
+        }
+
+        issue.status = status;
+
+        issue.history.push({
+            status,
+            changedAt: new Date(),
+        });
+
+        await issue.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Issue status updated successfully",
+            issue,
+        });
+
+    } catch (error) {
+        console.error("Failed to update issue status:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Error updating issue status",
+        });
+    }
+};
