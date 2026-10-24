@@ -205,3 +205,46 @@ export const updateIssueStatus = async (req, res) => {
         });
     }
 };
+
+export const searchIssues = async (req, res) => {
+    const { search } = req.query;
+
+    if (search !== undefined && (typeof search !== "string" || search.length > 100)) {
+        return res.status(400).json({
+            success: false,
+            message: "Search must be a string of 100 characters or fewer",
+        });
+    }
+
+    try {
+        const filter = { createdBy: req.user._id };
+        const normalizedSearch = search?.trim();
+
+        if (normalizedSearch) {
+            const escapedSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const searchCondition = { $regex: escapedSearch, $options: "i" };
+
+            filter.$or = [
+                { title: searchCondition },
+                { description: searchCondition },
+                { category: searchCondition },
+                { location: searchCondition },
+                { status: searchCondition },
+                { priority: searchCondition },
+            ];
+        }
+
+        const issues = await Issue.find(filter);
+        return res.status(200).json({
+            success: true,
+            message: "Issues fetched successfully",
+            issues,
+        });
+    } catch (error) {
+        console.error("Failed to search issues:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error searching issues",
+        });
+    }
+};
