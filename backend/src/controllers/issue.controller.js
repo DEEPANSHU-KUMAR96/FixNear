@@ -14,6 +14,12 @@ export const createIssue = async (req, res) => {
             priority,
             createdBy: req.user._id,
         });
+        if(!issue) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found",
+            });
+        }
 
         return res.status(201).json({
             success: true,
