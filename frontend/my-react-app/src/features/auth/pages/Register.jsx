@@ -1,58 +1,153 @@
-import React, { useState } from 'react'
-import useAuth from '../hooks/useAuth'
-import { Link, useNavigate } from 'react-router'
+import { useState } from 'react';
+import useAuth from '../hooks/useAuth';
+import { Link, useNavigate } from 'react-router';
 
 const Register = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        role: 'user'
-    })
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user'
+  });
+  const [errorMsg, setErrorMsg] = useState('');
 
-    const { register } = useAuth()
-    const navigate = useNavigate()
+  const { register, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        register(formData.name, formData.email, formData.password, formData.role)
-        navigate('/')
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (formData.name.trim().length < 3) {
+      setErrorMsg('Full name must be at least 3 characters long.');
+      return;
+    }
+    if (formData.name.trim().length > 20) {
+      setErrorMsg('Full name cannot exceed 20 characters.');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
+      return;
     }
 
-    return (
-        <main className='w-full h-screen flex justify-center items-center'>
-            <div className='form-container  gap-2 w-96 p-10 bg-white rounded-lg shadow-lg'>
-                <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+    try {
+      await register(formData.name.trim(), formData.email.trim(), formData.password, formData.role);
+      navigate('/');
+    } catch (err) {
+      setErrorMsg(err?.message || (typeof err === 'string' ? err : 'Registration failed. Please check your details.'));
+    }
+  };
 
-                    <h1 className='text-center text-2xl font-bold mb-4'>Register Form</h1>
+  return (
+    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+      <Link to="/" className="flex items-center gap-2 mb-8 group">
+        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+          FN
+        </div>
+        <span className="text-2xl font-bold text-slate-900">
+          Fix<span className="text-emerald-600">Near</span>
+        </span>
+      </Link>
 
-                    <label htmlFor="name">Name</label>
-                    <input className='p-2 border border-gray-300 rounded' type="text" name="name" id="name"
-                     onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+      <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+        <h1 className="text-2xl font-extrabold text-slate-900 text-center mb-1">Create Account</h1>
+        <p className="text-sm text-slate-500 text-center mb-6">
+          Join your neighbors and start reporting issues
+        </p>
 
-                    <label htmlFor="email">Email</label>
-                    <input className='p-2 border border-gray-300 rounded' type="email" name="email" id="email" 
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                    
-                    <label htmlFor="password">Password</label>
-                    <input className='p-2 border border-gray-300 rounded' type="password" name="password" id="password"
-                     onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                    
-                    <label htmlFor="role">Role</label>
-                    <select className='p-2 border border-gray-300 rounded' name="role" id="role"
-                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}>
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <button className='bg-primary text-black border border-gray-900 p-2 rounded cursor-pointer hover:scale-105 active:scale-95 hover:font-bold transition-all' type="submit">Register</button>
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            {errorMsg}
+          </div>
+        )}
 
-                    
-                </form>
-                <p>Already have an account? <Link to="/login" className='text-primary font-bold'>Login</Link></p>
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="name">
+              Full Name (3-20 characters)
+            </label>
+            <input
+              className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              type="text"
+              name="name"
+              id="name"
+              required
+              minLength={3}
+              maxLength={20}
+              placeholder="Jane Doe"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
 
-            </div>
-        </main>
-    )
-}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              type="email"
+              name="email"
+              id="email"
+              required
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
 
-export default Register
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="password">
+              Password (min. 6 characters)
+            </label>
+            <input
+              className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              type="password"
+              name="password"
+              id="password"
+              required
+              minLength={6}
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="role">
+              I am a
+            </label>
+            <select
+              className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              name="role"
+              id="role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            >
+              <option value="user">Resident / Citizen</option>
+              <option value="admin">Municipal Staff / Admin</option>
+            </select>
+          </div>
+
+          <button
+            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold p-2.5 rounded-lg shadow-sm hover:shadow transition disabled:opacity-50 cursor-pointer"
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating Account...' : 'Sign Up'}
+          </button>
+        </form>
+
+        <div className="mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-emerald-600 font-semibold hover:underline">
+            Log in here
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+};
+
+export default Register;

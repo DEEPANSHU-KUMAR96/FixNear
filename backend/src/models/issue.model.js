@@ -1,42 +1,44 @@
 import mongoose from "mongoose";
 
 const issueSchema = mongoose.Schema({ 
-
-    title:{
+    title: {
         type: String,
-        required: [true, 'title is required'],
+        required: [true, 'Title is required'],
         trim: true,
-        maxlength: [20, "Title can not be more than 20 characters long"],
+        maxlength: [50, "Title cannot be more than 50 characters long"],
     },
 
     description: {
         type: String,
-        required: [true, 'description is required'],
+        required: [true, 'Description is required'],
         trim: true,
-        maxlength: [200, "Description can not be more than 200 characters long"],
+        maxlength: [500, "Description cannot be more than 500 characters long"],
     },
 
     category: {
         type: String,
-        required: [true, 'category is required'],
-        enum: ['Garbage', 'Road', 'Streetlight', 'Water'],
+        required: [true, 'Category is required'],
+        enum: ['Garbage', 'Road', 'Streetlight', 'Water', 'Pothole', 'Sanitation'],
     },
 
     location: {
         type: String,
-        required: [true, 'location is required'],
+        required: [true, 'Location is required'],
+        trim: true,
     },
 
     status: {
         type: String,
-        required: [true, 'status is required'],
+        required: [true, 'Status is required'],
         enum: ['Reported', 'In Progress', 'Resolved'],
+        default: 'Reported',
     },
 
     priority: {
         type: String,
-        required: [true, 'priority is required'],
+        required: [true, 'Priority is required'],
         enum: ['Low', 'Medium', 'High'],
+        default: 'Medium',
     },
 
     createdBy: {
@@ -49,7 +51,7 @@ const issueSchema = mongoose.Schema({
         type: Array,
         default: [],
     }
-})
+}, { timestamps: true });
 
 const Issue = mongoose.model("Issue", issueSchema);
 

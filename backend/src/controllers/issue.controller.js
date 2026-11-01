@@ -1,25 +1,18 @@
 import Issue from "../models/issue.model.js";
 
-
 export const createIssue = async (req, res) => {
     const { title, description, category, location, status, priority } = req.body;
 
     try {
         const issue = await Issue.create({
-            title,
-            description,
+            title: title ? title.trim() : title,
+            description: description ? description.trim() : description,
             category,
-            location,
-            status,
-            priority,
+            location: location ? location.trim() : location,
+            status: status || "Reported",
+            priority: priority || "Medium",
             createdBy: req.user._id,
         });
-        if(!issue) {
-            return res.status(404).json({
-                success: false,
-                message: "Issue not found",
-            });
-        }
 
         return res.status(201).json({
             success: true,
@@ -28,6 +21,13 @@ export const createIssue = async (req, res) => {
         });
     } catch (error) {
         console.error("Failed to create issue:", error);
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                message: messages.join('. '),
+            });
+        }
         return res.status(500).json({
             success: false,
             message: "Error creating issue",
@@ -35,21 +35,31 @@ export const createIssue = async (req, res) => {
     }
 };
 
+export const getAllIssues = async (req, res) => {
+    try {
+        const issues = await Issue.find().sort({ _id: -1 }).populate("createdBy", "name email");
+        return res.status(200).json({
+            success: true,
+            message: "All issues fetched successfully",
+            issues,
+        });
+    } catch (error) {
+        console.error("Failed to fetch all issues:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching all issues",
+        });
+    }
+};
 
 export const getIssue = async (req, res) => {
     try {
-        const issues = await Issue.find({ createdBy: req.user._id });
+        const issues = await Issue.find({ createdBy: req.user._id }).sort({ _id: -1 });
         return res.status(200).json({
             success: true,
             message: "Issues fetched successfully",
             issues,
         });
-        if (!issues) {
-            return res.status(404).json({
-                success: false,
-                message: "Issues not found",
-            });
-        }
     } catch (error) {
         console.error("Failed to get issues:", error);
         return res.status(500).json({
@@ -57,12 +67,11 @@ export const getIssue = async (req, res) => {
             message: "Error getting issues",
         });
     }
-}
-
+};
 
 export const getSingleIssue = async (req, res) => {
     try {
-        const issue = await Issue.findById(req.params.id);
+        const issue = await Issue.findById(req.params.id).populate("createdBy", "name email");
         if (!issue) {
             return res.status(404).json({
                 success: false,
@@ -81,7 +90,7 @@ export const getSingleIssue = async (req, res) => {
             message: "Error getting issue",
         });
     }
-}
+};
 
 export const updateIssue = async (req, res) => {
     const updates = req.body;
@@ -96,11 +105,14 @@ export const updateIssue = async (req, res) => {
     }
 
     try {
-        const issue = await Issue.findById(req.params.id);
+        const issue = await Issue.findOne({
+            _id: req.params.id,
+            createdBy: req.user._id
+        });
         if (!issue) {
             return res.status(404).json({
                 success: false,
-                message: "Issue not found",
+                message: "Issue not found or unauthorized",
             });
         }
 
@@ -138,28 +150,26 @@ export const deleteIssue = async (req, res) => {
         const issue = await Issue.findOneAndDelete({
             _id: req.params.id,
             createdBy: req.user._id,
-        })
+        });
 
         if (!issue) {
             return res.status(404).json({
                 success: false,
-                message: "Issue not find"
-            })
+                message: "Issue not found or unauthorized"
+            });
         }
         return res.status(200).json({
             success: true,
-            message: "Issue deleted succesfully"
-        })
+            message: "Issue deleted successfully"
+        });
     } catch (error) {
         console.error("Failed to delete issue:", error);
-
         return res.status(500).json({
             success: false,
             message: "Error deleting issue",
         });
     }
-
-}
+};
 
 export const updateIssueStatus = async (req, res) => {
     try {
@@ -204,7 +214,6 @@ export const updateIssueStatus = async (req, res) => {
 
     } catch (error) {
         console.error("Failed to update issue status:", error);
-
         return res.status(500).json({
             success: false,
             message: "Error updating issue status",
@@ -240,7 +249,7 @@ export const searchIssues = async (req, res) => {
             ];
         }
 
-        const issues = await Issue.find(filter);
+        const issues = await Issue.find(filter).sort({ _id: -1 });
         return res.status(200).json({
             success: true,
             message: "Issues fetched successfully",

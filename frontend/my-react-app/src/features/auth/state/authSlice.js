@@ -1,4 +1,4 @@
-import {createSlice} from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 
 const authSlice = createSlice({
     name: "auth",
@@ -12,12 +12,14 @@ const authSlice = createSlice({
     reducers: {
         registerStart: (state) => {
             state.isLoading = true
+            state.error = null
         },
         registerSuccess: (state, action) => {
             state.isLoading = false
             state.user = action.payload.user
-            state.token = action.payload.token
+            state.token = action.payload.token || action.payload.accessToken || null
             state.isAuthenticated = true
+            state.error = null
         },
         registerFail: (state, action) => {
             state.isLoading = false
@@ -25,12 +27,14 @@ const authSlice = createSlice({
         },
         loginStart: (state) => {
             state.isLoading = true
+            state.error = null
         },
         loginSuccess: (state, action) => {
             state.isLoading = false
             state.user = action.payload.user
-            state.token = action.payload.token
+            state.token = action.payload.token || action.payload.accessToken || null
             state.isAuthenticated = true
+            state.error = null
         },
         loginFail: (state, action) => {
             state.isLoading = false
@@ -44,6 +48,7 @@ const authSlice = createSlice({
             state.user = null
             state.token = null
             state.isAuthenticated = false
+            state.error = null
         },
         logoutFail: (state, action) => {
             state.isLoading = false
@@ -56,10 +61,15 @@ const authSlice = createSlice({
             state.isLoading = false
             state.user = action.payload.user
             state.isAuthenticated = true
+            state.error = null
         },
+        // Token invalid/expired on refresh — fully reset to logged-out
         getUserFail: (state, action) => {
             state.isLoading = false
             state.error = action.payload
+            state.user = null
+            state.token = null
+            state.isAuthenticated = false
         },
         forgotPasswordStart: (state) => {
             state.isLoading = true
@@ -84,12 +94,12 @@ const authSlice = createSlice({
     }
 })
 
-export const { 
-    registerStart, 
-    registerSuccess, 
-    registerFail, 
-    loginStart, 
-    loginSuccess, 
+export const {
+    registerStart,
+    registerSuccess,
+    registerFail,
+    loginStart,
+    loginSuccess,
     loginFail,
     logoutStart,
     logoutSuccess,
@@ -102,7 +112,7 @@ export const {
     forgotPasswordFail,
     resetPasswordStart,
     resetPasswordSuccess,
-    resetPasswordFail 
+    resetPasswordFail
 } = authSlice.actions
 
 export default authSlice.reducer

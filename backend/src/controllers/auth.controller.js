@@ -15,33 +15,40 @@ export const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
+        const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
-        const isUserAllReadyExisted = await User.findOne({
-            $or: [
-                { email: email }
-            ]
-        })
+        const isUserAllReadyExisted = await User.findOne({ email: normalizedEmail });
 
         if (isUserAllReadyExisted) {
             return res.status(400).json({
-                message: 'User already existed with this email'
-            })
+                message: 'An account with this email already exists'
+            });
         }
 
-
         const user = await User.create({
-            name,
-            email,
+            name: name ? name.trim() : name,
+            email: normalizedEmail,
             password,
-            role: "user"
-        })
+            role: role === 'admin' ? 'admin' : 'user'
+        });
         await sendTokenResponse(user, res, "User registered successfully");
     }
     catch (error) {
-        console.log(error)
+        console.error("Error in registerUser:", error);
+        if (error.code === 11000) {
+            return res.status(400).json({
+                message: 'An account with this email already exists'
+            });
+        }
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                message: messages.join('. ')
+            });
+        }
         res.status(500).json({ message: "Error registering user" });
     }
-}
+};
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
@@ -53,43 +60,38 @@ export const loginUser = async (req, res) => {
         });
     }
 
-    const user = await User.findOne({
-        $or: [
-            { email: email }
-        ]
-    }).select("+password");
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
     if (!user) {
         return res.status(404).json({
-            message: 'user not found with this email'
-        })
+            message: 'No account found with this email'
+        });
     }
 
-    const isMatch = await user.comparePassword(password)
+    const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
         return res.status(400).json({
-            message: 'your email and password is invalid'
-        })
+            message: 'Invalid email or password'
+        });
     }
     await sendTokenResponse(user, res, "User logged in successfully");
-}
-
+};
 
 export const logoutUser = async (req, res) => {
     clearAuthCookies(res);
     res.status(200).json({
         message: 'User logged out successfully'
-    })
-}
+    });
+};
 
 export const getUser = async (req, res) => {
-      const user = req.user
     res.status(200).json({
         success: true,
         user: req.user
-    })
-}
+    });
+};
 
 export const refreshToken = async (req, res) => {
     const accessToken = createAccessToken(req.user._id);
@@ -100,8 +102,7 @@ export const refreshToken = async (req, res) => {
         message: "Token refreshed successfully",
         accessToken,
     });
-}
-
+};
 
 export const forgotPassword = async (req, res) => {
     if (!isPasswordResetEmailConfigured()) {

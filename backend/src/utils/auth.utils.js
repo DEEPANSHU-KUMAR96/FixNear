@@ -1,6 +1,7 @@
-
 import jwt from "jsonwebtoken";
 import { config } from "../config/config.js";
+
+const isSecure = config.NODE_ENV === "production" && !config.FRONTEND_URL?.includes("localhost");
 
 export const createAccessToken = (userId) =>
     jwt.sign(
@@ -15,7 +16,7 @@ export const createAccessToken = (userId) =>
 export const clearAccessTokenCookie = (res) => {
     res.clearCookie("token", {
         httpOnly: true,
-        secure: config.NODE_ENV === "production",
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
     });
@@ -24,7 +25,7 @@ export const clearAccessTokenCookie = (res) => {
 export const clearAuthCookies = (res) => {
     res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: config.NODE_ENV === "production",
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
     });
@@ -48,7 +49,7 @@ export const sendTokenResponse = async (user, res, message) => {
 
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: config.NODE_ENV === "production",
+        secure: isSecure,
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/",

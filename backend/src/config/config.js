@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-
 if (!process.env.PORT) {
     throw new Error("PORT is not defined");
 }
@@ -37,17 +36,15 @@ if (!process.env.GOOGLE_REDIRECT_URI) {
 }
 
 export const config = {
-
     PORT: process.env.PORT,
     MONGO_URI: process.env.MONGO_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
-    GOOLE_CLIENT_SECRET: process.env.GOOLE_CLIENT_SECRET,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
-    FRONTEND_URL: process.env.GOOGLE,
+    FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
     NODE_ENV: process.env.NODE_ENV
-
-}
+};
