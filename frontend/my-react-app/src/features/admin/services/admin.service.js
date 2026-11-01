@@ -27,7 +27,7 @@ const authConfig = () => {
 const getErrorMessage = (error) =>
     error.response?.data?.message || error.message || "Admin request failed";
 
-// ── Inquiries ──────────────────────────────────────────────────────────────────
+// ── Inquiries ──
 
 export async function getAdminInquiries() {
     try {
@@ -59,7 +59,7 @@ export async function deleteAdminInquiry(id) {
     }
 }
 
-// ── Stats ──────────────────────────────────────────────────────────────────────
+// ── Stats ───
 
 export async function getAdminStats() {
     try {
@@ -70,7 +70,7 @@ export async function getAdminStats() {
     }
 }
 
-// ── Users ──────────────────────────────────────────────────────────────────────
+// ── Users ───
 
 export async function getAdminUsers() {
     try {
@@ -81,7 +81,7 @@ export async function getAdminUsers() {
     }
 }
 
-// ── Issues ─────────────────────────────────────────────────────────────────────
+// ── Issues ───
 
 export async function getAdminAllIssues() {
     try {
