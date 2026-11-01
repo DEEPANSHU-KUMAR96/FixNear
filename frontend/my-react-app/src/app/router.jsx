@@ -4,6 +4,7 @@ import Register from "../features/auth/pages/Register";
 import ForgotPassword from "../features/auth/components/ForgotPassword";
 import Home from "../pages/Home";
 import Issue from "../features/issues/pages/Issue";
+import Admin from "../features/admin/pages/Admin";
 
 const router = createBrowserRouter([
     {
@@ -13,6 +14,10 @@ const router = createBrowserRouter([
     {
         path: "/issues",
         element: <Issue />
+    },
+    {
+        path: "/admin",
+        element: <Admin />
     },
     {
         path: "/login",

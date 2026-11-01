@@ -1,5 +1,18 @@
 # backend
 
+## Admin access
+
+Public registration always creates a regular user account. To grant admin access, first register the account, then promote that user's email in MongoDB:
+
+```javascript
+db.users.updateOne(
+  { email: "admin@example.com" },
+  { $set: { role: "admin" } }
+)
+```
+
+Admins can review and manage contact form submissions from `/admin`. The API endpoints are protected by both authentication and the admin role.
+
 To install dependencies:
 
 ```bash

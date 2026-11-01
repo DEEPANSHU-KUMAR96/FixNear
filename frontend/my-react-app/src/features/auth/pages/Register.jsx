@@ -6,8 +6,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    role: 'user'
+    password: ''
   });
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -32,7 +31,7 @@ const Register = () => {
     }
 
     try {
-      await register(formData.name.trim(), formData.email.trim(), formData.password, formData.role);
+      await register(formData.name.trim(), formData.email.trim(), formData.password);
       navigate('/');
     } catch (err) {
       setErrorMsg(err?.message || (typeof err === 'string' ? err : 'Registration failed. Please check your details.'));
@@ -112,22 +111,6 @@ const Register = () => {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="role">
-              I am a
-            </label>
-            <select
-              className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              name="role"
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            >
-              <option value="user">Resident / Citizen</option>
-              <option value="admin">Municipal Staff / Admin</option>
-            </select>
           </div>
 
           <button

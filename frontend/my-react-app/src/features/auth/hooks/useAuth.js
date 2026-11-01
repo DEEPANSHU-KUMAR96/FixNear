@@ -40,10 +40,10 @@ const useAuth = () => {
     const dispatch = useDispatch();
     const authState = useSelector((state) => state.auth);
 
-    const register = async (name, email, password, role) => {
+    const register = async (name, email, password) => {
         dispatch(registerStart());
         try {
-            const res = await registerUser(name, email, password, role);
+            const res = await registerUser(name, email, password);
             dispatch(registerSuccess(res));
             return res;
         } catch (err) {

@@ -6,6 +6,8 @@ import { config } from './config/config.js';
 
 import authRouter from './routes/auth.routes.js';
 import issueRouter from './routes/issue.routes.js';
+import contactRouter from './routes/contact.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 const app = express();
 
@@ -36,5 +38,7 @@ app.use(morgan('dev'));
 
 app.use("/api/auth", authRouter);
 app.use("/api/issues", issueRouter);
+app.use("/api/contacts", contactRouter);
+app.use("/api/admin", adminRouter);
 
 export default app;

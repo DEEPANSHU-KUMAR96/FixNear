@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { createIssueSuccess } from '../features/issues/state/issueSlice';
 import useAuth from '../features/auth/hooks/useAuth';
 import useIssue from '../features/issues/hooks/useIssue';
+import { createContact } from '../features/contact/services/contact.service';
 
 const INITIAL_ISSUES = [
   {
@@ -63,6 +64,10 @@ const Home = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState('');
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState('');
+  const [contactSuccess, setContactSuccess] = useState('');
 
   // Form state for reporting issue
   const [formData, setFormData] = useState({
@@ -131,6 +136,23 @@ const Home = () => {
         issuesSection.scrollIntoView({ behavior: 'smooth' });
       }
     }, 1200);
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactError('');
+    setContactSuccess('');
+    setContactLoading(true);
+
+    try {
+      const response = await createContact(contactForm);
+      setContactSuccess(response.message || 'Your inquiry has been sent.');
+      setContactForm({ name: '', email: '', message: '' });
+    } catch (error) {
+      setContactError(error.message || 'Failed to send your inquiry. Please try again.');
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   const filteredIssues =
@@ -510,40 +532,66 @@ const Home = () => {
           </p>
 
           <div className="bg-slate-50 border border-slate-200/80 p-6 sm:p-8 rounded-2xl text-left max-w-xl mx-auto shadow-xs">
-            <form onSubmit={(e) => { e.preventDefault(); alert('Thank you for reaching out! A FixNear team member will contact you.'); }}>
+            <form onSubmit={handleContactSubmit}>
               <div className="space-y-4">
+                {contactError && (
+                  <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {contactError}
+                  </p>
+                )}
+                {contactSuccess && (
+                  <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    {contactSuccess}
+                  </p>
+                )}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Your Name</label>
+                  <label htmlFor="contact-name" className="block text-xs font-semibold text-slate-700 mb-1">Your Name</label>
                   <input
                     type="text"
+                    id="contact-name"
+                    name="name"
                     required
+                    maxLength={100}
                     placeholder="Jane Doe"
+                    value={contactForm.name}
+                    onChange={(event) => setContactForm({ ...contactForm, name: event.target.value })}
                     className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                  <label htmlFor="contact-email" className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
                   <input
                     type="email"
+                    id="contact-email"
+                    name="email"
                     required
+                    maxLength={254}
                     placeholder="jane@example.com"
+                    value={contactForm.email}
+                    onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })}
                     className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Message</label>
+                  <label htmlFor="contact-message" className="block text-xs font-semibold text-slate-700 mb-1">Message</label>
                   <textarea
                     rows="3"
+                    id="contact-message"
+                    name="message"
                     required
+                    maxLength={5000}
                     placeholder="How can FixNear help your ward or neighborhood?"
+                    value={contactForm.message}
+                    onChange={(event) => setContactForm({ ...contactForm, message: event.target.value })}
                     className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  ></textarea>
+                  />
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition cursor-pointer"
+                  disabled={contactLoading}
+                  className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send Inquiry
+                  {contactLoading ? 'Sending...' : 'Send Inquiry'}
                 </button>
               </div>
             </form>

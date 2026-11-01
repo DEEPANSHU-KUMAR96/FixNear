@@ -94,6 +94,14 @@ const Navbar = () => {
                 >
                   My Issues
                 </Link>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition"
+                  >
+                    Admin Inbox
+                  </Link>
+                )}
                 <span className="text-sm font-medium text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
                   Hi, {user?.name || 'Citizen'}
                 </span>
@@ -185,10 +193,19 @@ const Navbar = () => {
           </nav>
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
             {isAuthenticated ? (
-              <div className="flex items-center justify-between">
+              <>
                 <span className="text-sm font-medium text-slate-700">
                   {user?.name || 'Citizen'}
                 </span>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg"
+                  >
+                    Admin Inbox
+                  </Link>
+                )}
                 <button
                   onClick={() => {
                     logout();
@@ -198,7 +215,7 @@ const Navbar = () => {
                 >
                   Logout
                 </button>
-              </div>
+              </>
             ) : (
               <>
                 <Link

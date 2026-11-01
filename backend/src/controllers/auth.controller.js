@@ -12,7 +12,7 @@ import {
 } from "../services/email.service.js";
 
 export const registerUser = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     try {
         const normalizedEmail = email ? email.toLowerCase().trim() : '';
@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
             name: name ? name.trim() : name,
             email: normalizedEmail,
             password,
-            role: role === 'admin' ? 'admin' : 'user'
+            role: 'user' 
         });
         await sendTokenResponse(user, res, "User registered successfully");
     }

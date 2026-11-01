@@ -54,7 +54,7 @@ export async function loginUser(email, password){
     }
 }
 
-const getToken = () => {
+export const getStoredAccessToken = () => {
     const raw = localStorage.getItem('token');
     if (!raw) return null;
     try {
@@ -67,7 +67,7 @@ const getToken = () => {
 
 export async function logoutUser(){
     try{
-        const token = getToken();
+        const token = getStoredAccessToken();
         await API_URL.post('auth/logout', {}, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
@@ -85,7 +85,7 @@ export async function logoutUser(){
 
 export async function getUser(){
     try{
-        const token = getToken();
+        const token = getStoredAccessToken();
         const res = await API_URL.get('auth/me', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
