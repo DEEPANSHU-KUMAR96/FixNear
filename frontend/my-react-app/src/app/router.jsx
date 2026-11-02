@@ -5,11 +5,16 @@ import ForgotPassword from "../features/auth/components/ForgotPassword";
 import Home from "../pages/Home";
 import Issue from "../features/issues/pages/Issue";
 import Admin from "../features/admin/pages/Admin";
+import UserDashboard from "../features/dashboard/pages/UserDashboard";
 
 const router = createBrowserRouter([
     {
         path: "/",
         element: <Home />
+    },
+    {
+        path: "/dashboard",
+        element: <UserDashboard />
     },
     {
         path: "/issues",

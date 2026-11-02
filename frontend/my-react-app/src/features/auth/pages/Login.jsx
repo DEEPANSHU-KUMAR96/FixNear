@@ -22,8 +22,12 @@ const Login = () => {
     }
 
     try {
-      await login(formData.email.trim(), formData.password);
-      navigate('/');
+      const res = await login(formData.email.trim(), formData.password);
+      if (res?.user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setErrorMsg(err?.message || (typeof err === 'string' ? err : 'Login failed. Please check credentials.'));
     }

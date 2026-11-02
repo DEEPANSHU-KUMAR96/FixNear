@@ -32,7 +32,7 @@ const Register = () => {
 
     try {
       await register(formData.name.trim(), formData.email.trim(), formData.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setErrorMsg(err?.message || (typeof err === 'string' ? err : 'Registration failed. Please check your details.'));
     }
