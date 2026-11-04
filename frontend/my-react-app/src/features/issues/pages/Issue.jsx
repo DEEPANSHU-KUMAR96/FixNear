@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import Navbar from '../../../component/Navbar';
 import useIssue from '../hooks/useIssue';
 import useAuth from '../../auth/hooks/useAuth';
@@ -12,6 +13,7 @@ const STATUSES = ['All', 'Reported', 'In Progress', 'Resolved'];
 const PRIORITIES = ['All', 'Low', 'Medium', 'High'];
 
 const Issue = () => {
+  const navigate = useNavigate();
   const {
     issues,
     isLoading,
@@ -22,6 +24,7 @@ const Issue = () => {
     updateExistingIssue,
     updateStatus,
     removeIssue,
+    upvoteIssue,
     clearError
   } = useIssue();
 
@@ -132,6 +135,19 @@ const Issue = () => {
       await updateStatus(id, newStatus);
     } catch (err) {
       alert(err?.message || 'Failed to update status');
+    }
+  };
+
+  const handleUpvoteIssue = async (id) => {
+    if (!isAuthenticated) {
+      alert('Please log in to upvote issues.');
+      navigate('/login');
+      return;
+    }
+    try {
+      await upvoteIssue(id);
+    } catch (err) {
+      alert(err?.message || 'Failed to update upvote');
     }
   };
 
@@ -284,6 +300,8 @@ const Issue = () => {
                   key={item._id}
                   item={item}
                   isOwner={isOwner}
+                  currentUserId={user?.id || user?._id}
+                  onUpvote={handleUpvoteIssue}
                   onStatusChange={handleQuickStatusChange}
                   onEdit={handleOpenEditModal}
                   onDelete={handleDeleteIssue}

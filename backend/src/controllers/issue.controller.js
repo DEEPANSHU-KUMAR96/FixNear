@@ -263,3 +263,54 @@ export const searchIssues = async (req, res) => {
         });
     }
 };
+
+export const toggleUpvoteIssue = async (req, res) => {
+    try {
+        const issueId = req.params.id;
+        const userId = req.user._id;
+
+        const issue = await Issue.findById(issueId);
+        if (!issue) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found",
+            });
+        }
+
+        if (!Array.isArray(issue.upvotes)) {
+            issue.upvotes = [];
+        }
+
+        const upvoteIndex = issue.upvotes.findIndex(
+            (id) => id.toString() === userId.toString()
+        );
+
+        let isUpvoted = false;
+        if (upvoteIndex > -1) {
+            issue.upvotes.splice(upvoteIndex, 1);
+            isUpvoted = false;
+        } else {
+            issue.upvotes.push(userId);
+            isUpvoted = true;
+        }
+
+        issue.upvotesCount = issue.upvotes.length;
+        await issue.save();
+
+        await issue.populate("createdBy", "name email");
+
+        return res.status(200).json({
+            success: true,
+            message: isUpvoted ? "Issue upvoted successfully" : "Upvote removed successfully",
+            isUpvoted,
+            upvotesCount: issue.upvotesCount,
+            issue,
+        });
+    } catch (error) {
+        console.error("Failed to toggle upvote:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error processing upvote",
+        });
+    }
+};

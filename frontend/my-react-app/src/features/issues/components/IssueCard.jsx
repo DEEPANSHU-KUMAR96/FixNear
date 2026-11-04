@@ -1,10 +1,27 @@
 export default function IssueCard({
     item,
     isOwner,
+    currentUserId,
+    onUpvote,
     onStatusChange,
     onEdit,
     onDelete,
 }) {
+    const upvotesCount = typeof item.upvotesCount === 'number'
+        ? item.upvotesCount
+        : (Array.isArray(item.upvotes)
+            ? item.upvotes.length
+            : (typeof item.upvotes === 'number' ? item.upvotes : 0));
+
+    const isUpvoted = Boolean(
+        currentUserId &&
+        Array.isArray(item.upvotes) &&
+        item.upvotes.some((id) => {
+            const normalizedId = typeof id === 'string' ? id : id?._id || id?.id || id?.toString();
+            return normalizedId === (currentUserId?._id || currentUserId?.id || currentUserId?.toString());
+        })
+    );
+
     return (
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
             <div>
@@ -73,17 +90,36 @@ export default function IssueCard({
 
                 {/* Interactive controls */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
-                    {/* Status toggle selector */}
-                    <select
-                        value={item.status}
-                        onChange={(e) => onStatusChange(item._id, e.target.value)}
-                        className="text-[11px] font-medium py-1 px-2 border border-slate-200 rounded-md bg-slate-50 focus:outline-none focus:border-emerald-500 cursor-pointer"
-                        title="Update Status"
-                    >
-                        <option value="Reported">Reported</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                        {/* Upvote Button */}
+                        <button
+                            type="button"
+                            onClick={() => onUpvote && onUpvote(item._id)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition cursor-pointer ${
+                                isUpvoted
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-2xs'
+                                    : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border-slate-200 hover:border-emerald-200'
+                            }`}
+                            title={isUpvoted ? "Remove upvote" : "Upvote this issue"}
+                        >
+                            <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7" />
+                            </svg>
+                            <span>Upvote ({upvotesCount})</span>
+                        </button>
+
+                        {/* Status toggle selector */}
+                        <select
+                            value={item.status}
+                            onChange={(e) => onStatusChange(item._id, e.target.value)}
+                            className="text-[11px] font-medium py-1.5 px-2 border border-slate-200 rounded-md bg-slate-50 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                            title="Update Status"
+                        >
+                            <option value="Reported">Reported</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
 
                     {/* Owner actions (Edit / Delete) */}
                     {isOwner && (

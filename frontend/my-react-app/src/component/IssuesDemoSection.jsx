@@ -7,6 +7,7 @@ export default function IssuesDemoSection({
   onCategoryChange,
   onUpvote,
   onOpenReportModal,
+  currentUserId,
 }) {
   const filteredIssues =
     selectedCategory === 'All'
@@ -55,63 +56,84 @@ export default function IssuesDemoSection({
 
         {/* Issues Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredIssues.map((issue) => (
-            <div
-              key={issue._id}
-              className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                    {issue.category}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                      issue.status === 'Resolved'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : issue.status === 'In Progress'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-blue-100 text-blue-700'
+          {filteredIssues.map((issue) => {
+            const upvotesCount = typeof issue.upvotesCount === 'number'
+              ? issue.upvotesCount
+              : (Array.isArray(issue.upvotes)
+                ? issue.upvotes.length
+                : (typeof issue.upvotes === 'number' ? issue.upvotes : 0));
+
+            const isUpvoted = Boolean(
+              currentUserId &&
+              Array.isArray(issue.upvotes) &&
+              issue.upvotes.some((id) => {
+                const normalizedId = typeof id === 'string' ? id : id?._id || id?.id || id?.toString();
+                return normalizedId === (currentUserId?._id || currentUserId?.id || currentUserId?.toString());
+              })
+            );
+
+            return (
+              <div
+                key={issue._id}
+                className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                      {issue.category}
+                    </span>
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                        issue.status === 'Resolved'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : issue.status === 'In Progress'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {issue.status}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">{issue.title}</h3>
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mb-3">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    {issue.location} • <span className="text-slate-400">{issue.date || 'Recently'}</span>
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">{issue.description}</p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 font-medium">Priority:</span>
+                    <span className={`font-semibold ${
+                      issue.priority === 'High' ? 'text-rose-600' : 'text-slate-600'
+                    }`}>
+                      {issue.priority}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onUpvote(issue._id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium transition cursor-pointer ${
+                      isUpvoted
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-2xs'
+                        : 'bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200'
                     }`}
+                    title={isUpvoted ? "Remove upvote" : "Upvote to raise awareness"}
                   >
-                    {issue.status}
-                  </span>
+                    <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                    </svg>
+                    Upvote ({upvotesCount})
+                  </button>
                 </div>
-
-                <h3 className="text-lg font-bold text-slate-900 mb-1">{issue.title}</h3>
-                <p className="text-xs text-slate-500 flex items-center gap-1 mb-3">
-                  <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  </svg>
-                  {issue.location} • <span className="text-slate-400">{issue.date}</span>
-                </p>
-                <p className="text-sm text-slate-600 leading-relaxed mb-4">{issue.description}</p>
               </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 font-medium">Priority:</span>
-                  <span className={`font-semibold ${
-                    issue.priority === 'High' ? 'text-rose-600' : 'text-slate-600'
-                  }`}>
-                    {issue.priority}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onUpvote(issue._id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 transition font-medium cursor-pointer"
-                  title="Upvote to raise awareness"
-                >
-                  <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
-                  </svg>
-                  Upvote ({issue.upvotes})
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-8 text-center flex items-center justify-center gap-4">

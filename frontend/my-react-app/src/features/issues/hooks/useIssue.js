@@ -15,6 +15,7 @@ import {
     deleteIssueStart, 
     deleteIssueSuccess, 
     deleteIssueFail,
+    upvoteIssueSuccess,
     clearIssueError,
     clearCurrentIssue
 } from "../state/issueSlice";
@@ -26,7 +27,8 @@ import {
     updateIssue as updateIssueApi,
     updateIssueStatus as updateIssueStatusApi,
     deleteIssue as deleteIssueApi,
-    searchIssues as searchIssuesApi
+    searchIssues as searchIssuesApi,
+    upvoteIssue as upvoteIssueApi
 } from "../services/issue.service";
 
 const toSerializableError = (err) => {
@@ -144,6 +146,17 @@ const useIssue = () => {
         }
     };
 
+    const upvoteIssue = async (id) => {
+        try {
+            const res = await upvoteIssueApi(id);
+            const updated = res?.issue || res;
+            dispatch(upvoteIssueSuccess(updated));
+            return res;
+        } catch (err) {
+            throw err;
+        }
+    };
+
     return {
         ...issueState,
         createIssue,
@@ -154,6 +167,7 @@ const useIssue = () => {
         updateStatus,
         removeIssue,
         searchUserIssues,
+        upvoteIssue,
         clearError: () => dispatch(clearIssueError()),
         clearCurrent: () => dispatch(clearCurrentIssue())
     };

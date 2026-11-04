@@ -136,3 +136,15 @@ export async function deleteIssue(id) {
         throw error;
     }
 }
+
+export async function upvoteIssue(id) {
+    try {
+        const response = await Api.post(`issues/${id}/upvote`, {}, {
+            headers: getAuthHeaders()
+        });
+        return response.data;
+    } catch (err) {
+        const error = new Error(getErrorMessage(err));
+        throw error;
+    }
+}

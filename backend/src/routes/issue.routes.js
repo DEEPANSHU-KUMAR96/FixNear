@@ -7,7 +7,8 @@ import {
     getSingleIssue, 
     searchIssues, 
     updateIssue, 
-    updateIssueStatus 
+    updateIssueStatus,
+    toggleUpvoteIssue
 } from '../controllers/issue.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { createIssueValidator } from '../validators/issue.validator.js';
@@ -29,5 +30,8 @@ router.patch('/:id', protect, updateIssue);
 router.delete('/:id', protect, deleteIssue);
 
 router.patch('/:id/status', protect, updateIssueStatus);
+
+router.post('/:id/upvote', protect, toggleUpvoteIssue);
+router.patch('/:id/upvote', protect, toggleUpvoteIssue);
 
 export default router;

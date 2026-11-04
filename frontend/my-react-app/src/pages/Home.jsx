@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../component/Navbar';
 import HeroSection from '../component/HeroSection';
 import IssuesDemoSection from '../component/IssuesDemoSection';
@@ -64,14 +64,25 @@ const CATEGORIES = ['All', 'Road', 'Water', 'Streetlight', 'Garbage', 'Pothole',
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useAuth();
-  const { createIssue } = useIssue();
+  const { isAuthenticated, user } = useAuth();
+  const { createIssue, fetchAllIssues, upvoteIssue } = useIssue();
 
   const [issuesList, setIssuesList] = useState(INITIAL_ISSUES);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState('');
+
+  // Fetch real issues from backend on load
+  useEffect(() => {
+    fetchAllIssues()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setIssuesList(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Form state for reporting issue
   const [formData, setFormData] = useState({
@@ -92,10 +103,54 @@ const Home = () => {
   const [contactError, setContactError] = useState('');
   const [contactSuccess, setContactSuccess] = useState('');
 
-  const handleUpvote = (id) => {
-    setIssuesList((prev) =>
-      prev.map((iss) => (iss._id === id ? { ...iss, upvotes: iss.upvotes + 1 } : iss))
-    );
+  const handleUpvote = async (id) => {
+    if (!isAuthenticated) {
+      // Local optimistic increment for non-logged in users
+      setIssuesList((prev) =>
+        prev.map((iss) => {
+          if (iss._id === id) {
+            const count = typeof iss.upvotesCount === 'number'
+              ? iss.upvotesCount
+              : (Array.isArray(iss.upvotes) ? iss.upvotes.length : (iss.upvotes || 0));
+            return {
+              ...iss,
+              upvotesCount: count + 1,
+              upvotes: count + 1,
+            };
+          }
+          return iss;
+        })
+      );
+      return;
+    }
+
+    try {
+      const res = await upvoteIssue(id);
+      const updated = res?.issue;
+      if (updated) {
+        setIssuesList((prev) =>
+          prev.map((iss) => (iss._id === id ? { ...iss, ...updated } : iss))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to upvote on backend:', err);
+      // Fallback optimistic update
+      setIssuesList((prev) =>
+        prev.map((iss) => {
+          if (iss._id === id) {
+            const count = typeof iss.upvotesCount === 'number'
+              ? iss.upvotesCount
+              : (Array.isArray(iss.upvotes) ? iss.upvotes.length : (iss.upvotes || 0));
+            return {
+              ...iss,
+              upvotesCount: count + 1,
+              upvotes: count + 1,
+            };
+          }
+          return iss;
+        })
+      );
+    }
   };
 
   const handleReportSubmit = async (e) => {
@@ -180,6 +235,7 @@ const Home = () => {
         onCategoryChange={setSelectedCategory}
         onUpvote={handleUpvote}
         onOpenReportModal={() => setIsReportModalOpen(true)}
+        currentUserId={user?.id || user?._id}
       />
 
       <HowItWorksSection />

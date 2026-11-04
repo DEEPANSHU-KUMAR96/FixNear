@@ -47,6 +47,16 @@ const issueSchema = mongoose.Schema({
         required: [true, 'createdBy is required'],
     },
 
+    upvotes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+
+    upvotesCount: {
+        type: Number,
+        default: 0,
+    },
+
     history: {
         type: Array,
         default: [],

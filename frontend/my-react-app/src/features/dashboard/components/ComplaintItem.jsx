@@ -35,6 +35,12 @@ export default function ComplaintItem({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const upvotesCount = typeof issue.upvotesCount === 'number'
+    ? issue.upvotesCount
+    : (Array.isArray(issue.upvotes)
+      ? issue.upvotes.length
+      : (typeof issue.upvotes === 'number' ? issue.upvotes : 0));
+
   const imageSrc =
     issue.image ||
     CATEGORY_IMAGES[issue.category] ||
@@ -94,9 +100,20 @@ export default function ComplaintItem({
 
       {/* Right: Status badge + Relative time + 3-dots action menu */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-        <div className="flex flex-col items-end">
-          {renderStatusBadge(issue.status)}
-          <span className="text-[11px] text-slate-400 mt-1 font-medium">
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60"
+              title={`${upvotesCount} community upvotes`}
+            >
+              <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7" />
+              </svg>
+              {upvotesCount}
+            </span>
+            {renderStatusBadge(issue.status)}
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">
             {formatTimeAgo(issue.createdAt || issue.date)}
           </span>
         </div>

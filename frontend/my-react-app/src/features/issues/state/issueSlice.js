@@ -95,6 +95,20 @@ const issueSlice = createSlice({
             state.error = action.payload;
         },
 
+        // Upvote Issue
+        upvoteIssueSuccess: (state, action) => {
+            const updatedIssue = action.payload?.issue || action.payload;
+            if (updatedIssue && updatedIssue._id) {
+                state.issues = state.issues.map((issue) =>
+                    issue._id === updatedIssue._id ? { ...issue, ...updatedIssue } : issue
+                );
+                if (state.currentIssue?._id === updatedIssue._id) {
+                    state.currentIssue = { ...state.currentIssue, ...updatedIssue };
+                }
+            }
+            state.error = null;
+        },
+
         // Helper Reducers
         clearIssueError: (state) => {
             state.error = null;
@@ -121,6 +135,7 @@ export const {
     deleteIssueStart,
     deleteIssueSuccess,
     deleteIssueFail,
+    upvoteIssueSuccess,
     clearIssueError,
     clearCurrentIssue,
 } = issueSlice.actions;
