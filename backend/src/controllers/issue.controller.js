@@ -3,6 +3,14 @@ import Issue from "../models/issue.model.js";
 export const createIssue = async (req, res) => {
     const { title, description, category, location, status, priority } = req.body;
 
+    if (!title || !description || !category || !location) {
+        return res.status(400).json({
+            success: false,
+            message: "Title, description, category, and location are required",
+        });
+    }
+
+
     try {
         const issue = await Issue.create({
             title: title ? title.trim() : title,
@@ -38,6 +46,13 @@ export const createIssue = async (req, res) => {
 export const getAllIssues = async (req, res) => {
     try {
         const issues = await Issue.find().sort({ _id: -1 }).populate("createdBy", "name email");
+
+        if(!issues) {
+            return res.status(404).json({
+                success: false,
+                message: "No issues found",
+            });
+        }
         return res.status(200).json({
             success: true,
             message: "All issues fetched successfully",
@@ -55,6 +70,13 @@ export const getAllIssues = async (req, res) => {
 export const getIssue = async (req, res) => {
     try {
         const issues = await Issue.find({ createdBy: req.user._id }).sort({ _id: -1 });
+
+        if(!issues) {
+            return res.status(404).json({
+                success: false,
+                message: "No issues found",
+            });
+        }
         return res.status(200).json({
             success: true,
             message: "Issues fetched successfully",

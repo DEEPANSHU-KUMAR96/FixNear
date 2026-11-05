@@ -1,6 +1,9 @@
 import { Link } from 'react-router';
+import useAuth from '../features/auth/hooks/useAuth';
 
 export default function FooterSection() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -18,7 +21,15 @@ export default function FooterSection() {
           <a href="#about" className="hover:text-white transition">About</a>
           <a href="#how-it-works" className="hover:text-white transition">How it works</a>
           <a href="#contact" className="hover:text-white transition">Contact</a>
-          <Link to="/login" className="hover:text-white transition">Sign In</Link>
+          {isAuthenticated ? (
+            <Link to="/dashboard" className="text-emerald-400 hover:text-emerald-300 font-semibold transition">
+              Dashboard
+            </Link>
+          ) : (
+            <Link to="/login" className="hover:text-white transition">
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </footer>

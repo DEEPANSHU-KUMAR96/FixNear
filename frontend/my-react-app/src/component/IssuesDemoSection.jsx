@@ -136,20 +136,25 @@ export default function IssuesDemoSection({
           })}
         </div>
 
-        <div className="mt-8 text-center flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={onOpenReportModal}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition cursor-pointer"
-          >
-            Report an Issue
-          </button>
-          <Link
-            to="/issues"
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition shadow-2xs"
-          >
-            Browse All Issues Tracker &rarr;
-          </Link>
+        <div className="mt-10 pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-500 text-center sm:text-left">
+            Spotted a civic problem in your neighborhood? Report it now and notify local authorities.
+          </p>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={onOpenReportModal}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer"
+            >
+              + Report an Issue
+            </button>
+            <Link
+              to="/issues"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition shadow-2xs"
+            >
+              All Issues &rarr;
+            </Link>
+          </div>
         </div>
 
       </div>

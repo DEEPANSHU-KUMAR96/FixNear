@@ -240,7 +240,7 @@ const Home = () => {
 
       <HowItWorksSection />
 
-      <AboutSection />
+      <AboutSection onOpenReportModal={() => setIsReportModalOpen(true)} />
 
       <ContactSection
         contactForm={contactForm}
