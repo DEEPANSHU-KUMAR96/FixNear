@@ -1,4 +1,22 @@
 import Issue from "../models/issue.model.js";
+import { uploadIssueImage } from "../services/imagekit.service.js";
+
+const uploadImageFromRequest = async (req, res) => {
+    if (!req.file) return null;
+
+    try {
+        return await uploadIssueImage(req.file);
+    } catch (error) {
+        console.error("Failed to upload issue image:", error);
+        res.status(error.code === "IMAGEKIT_NOT_CONFIGURED" ? 503 : 502).json({
+            success: false,
+            message: error.code === "IMAGEKIT_NOT_CONFIGURED"
+                ? "Image upload is not configured"
+                : "Failed to upload issue image",
+        });
+        return false;
+    }
+};
 
 export const createIssue = async (req, res) => {
     const { title, description, category, location, status, priority } = req.body;
@@ -12,11 +30,15 @@ export const createIssue = async (req, res) => {
 
 
     try {
+        const uploadedImage = await uploadImageFromRequest(req, res);
+        if (uploadedImage === false) return;
+
         const issue = await Issue.create({
             title: title ? title.trim() : title,
             description: description ? description.trim() : description,
             category,
             location: location ? location.trim() : location,
+            image: uploadedImage?.url,
             status: status || "Reported",
             priority: priority || "Medium",
             createdBy: req.user._id,
@@ -119,7 +141,7 @@ export const updateIssue = async (req, res) => {
     const allowedFields = ["title", "description", "category", "location", "status", "priority"];
 
     if (!updates || typeof updates !== "object" || Array.isArray(updates) ||
-        !allowedFields.some((field) => Object.hasOwn(updates, field))) {
+        (!allowedFields.some((field) => Object.hasOwn(updates, field)) && !req.file)) {
         return res.status(400).json({
             success: false,
             message: "At least one issue field is required",
@@ -138,10 +160,16 @@ export const updateIssue = async (req, res) => {
             });
         }
 
+        const uploadedImage = await uploadImageFromRequest(req, res);
+        if (uploadedImage === false) return;
+
         for (const field of allowedFields) {
             if (Object.hasOwn(updates, field)) {
                 issue[field] = updates[field];
             }
+        }
+        if (uploadedImage) {
+            issue.image = uploadedImage.url;
         }
 
         await issue.save();

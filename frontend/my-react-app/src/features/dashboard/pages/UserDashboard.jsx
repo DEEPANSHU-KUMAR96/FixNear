@@ -69,6 +69,7 @@ export default function UserDashboard() {
     priority: 'Medium',
     status: 'Reported',
     description: '',
+    image: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -152,6 +153,7 @@ export default function UserDashboard() {
       priority: issue.priority || 'Medium',
       status: issue.status || 'Reported',
       description: issue.description || '',
+      image: null,
     });
     setSubmitError('');
     setSubmitSuccess('');

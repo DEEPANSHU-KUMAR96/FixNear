@@ -45,6 +45,8 @@ export const config = {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+    IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY?.trim(),
+    IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY?.trim(),
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
     NODE_ENV: process.env.NODE_ENV
 };

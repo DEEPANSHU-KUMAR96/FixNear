@@ -44,6 +44,14 @@ export default function IssueCard({
                     </span>
                 </div>
 
+                {item.image && (
+                    <img
+                        src={item.image}
+                        alt={item.title}
+                        className="mb-3 h-40 w-full rounded-xl object-cover"
+                    />
+                )}
+
                 {/* Title */}
                 <h3 className="text-base font-bold text-slate-900 mb-2 leading-snug">
                     {item.title}
@@ -152,4 +160,3 @@ export default function IssueCard({
         </div>
     );
 }
-

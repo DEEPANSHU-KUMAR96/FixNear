@@ -95,6 +95,14 @@ export default function IssuesDemoSection({
                     </span>
                   </div>
 
+                  {issue.image && (
+                    <img
+                      src={issue.image}
+                      alt={issue.title}
+                      className="mb-3 h-44 w-full rounded-lg object-cover"
+                    />
+                  )}
+
                   <h3 className="text-lg font-bold text-slate-900 mb-1">{issue.title}</h3>
                   <p className="text-xs text-slate-500 flex items-center gap-1 mb-3">
                     <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,4 +169,3 @@ export default function IssuesDemoSection({
     </section>
   );
 }
-

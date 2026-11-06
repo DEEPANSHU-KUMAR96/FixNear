@@ -11,11 +11,12 @@ import {
     toggleUpvoteIssue
 } from '../controllers/issue.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
+import { parseIssueImage } from '../middlewares/issue-image.middleware.js';
 import { createIssueValidator } from '../validators/issue.validator.js';
 
 const router = Router();
 
-router.post('/create', protect, createIssueValidator, createIssue);
+router.post('/create', protect, parseIssueImage, createIssueValidator, createIssue);
 
 router.get('/all', getAllIssues);
 
@@ -25,7 +26,7 @@ router.get('/my', protect, searchIssues);
 
 router.get('/:id', getSingleIssue);
 
-router.patch('/:id', protect, updateIssue);
+router.patch('/:id', protect, parseIssueImage, updateIssue);
 
 router.delete('/:id', protect, deleteIssue);
 

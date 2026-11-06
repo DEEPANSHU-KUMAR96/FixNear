@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import IssueImageInput from '../../issues/components/IssueImageInput';
 
 const CATEGORIES = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
@@ -10,6 +11,7 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
     location: '',
     priority: 'Medium',
     description: '',
+    image: null,
   });
   const [error, setError] = useState('');
 
@@ -30,6 +32,7 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
         location: '',
         priority: 'Medium',
         description: '',
+        image: null,
       });
     } catch (err) {
       setError(err?.message || 'Failed to submit issue. Please try again.');
@@ -136,6 +139,11 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
           </div>
 
           {/* Buttons */}
+          <IssueImageInput
+            value={formData.image}
+            onChange={(image) => setFormData({ ...formData, image })}
+          />
+
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
@@ -157,4 +165,3 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
     </div>
   );
 }
-

@@ -27,6 +27,11 @@ const issueSchema = mongoose.Schema({
         trim: true,
     },
 
+    image: {
+        type: String,
+        trim: true,
+    },
+
     status: {
         type: String,
         required: [true, 'Status is required'],

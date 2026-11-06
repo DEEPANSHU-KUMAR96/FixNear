@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import IssueImageInput from './IssueImageInput';
 
 export default function IssueModal({
     isOpen,
@@ -158,6 +159,12 @@ export default function IssueModal({
                                 ></textarea>
                             </div>
 
+                            <IssueImageInput
+                                value={formData.image}
+                                currentImage={editingIssue?.image}
+                                onChange={(image) => onFormChange({ ...formData, image })}
+                            />
+
                             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                                 <button
                                     type="button"
@@ -181,4 +188,3 @@ export default function IssueModal({
         </div>
     );
 }
-

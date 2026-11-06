@@ -49,7 +49,8 @@ const Issue = () => {
     location: '',
     priority: 'Medium',
     status: 'Reported',
-    description: ''
+    description: '',
+    image: null,
   });
 
   // Load issues on initial mount and when tab changes
@@ -71,7 +72,8 @@ const Issue = () => {
       location: '',
       priority: 'Medium',
       status: 'Reported',
-      description: ''
+      description: '',
+      image: null,
     });
     setIsCreateModalOpen(true);
   };
@@ -86,7 +88,8 @@ const Issue = () => {
       location: issue.location || '',
       priority: issue.priority || 'Medium',
       status: issue.status || 'Reported',
-      description: issue.description || ''
+      description: issue.description || '',
+      image: null,
     });
   };
 

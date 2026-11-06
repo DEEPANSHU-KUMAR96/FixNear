@@ -90,7 +90,8 @@ const Home = () => {
     category: 'Road',
     location: '',
     description: '',
-    priority: 'Medium'
+    priority: 'Medium',
+    image: null,
   });
 
   // Contact form state
@@ -163,16 +164,18 @@ const Home = () => {
     }
 
     // If authenticated, persist directly to backend
+    let persistedIssue;
     if (isAuthenticated) {
       try {
-        await createIssue(formData);
+        const response = await createIssue(formData);
+        persistedIssue = response?.issue;
       } catch (err) {
         setReportError(err?.message || 'Failed to submit issue to backend.');
         return;
       }
     }
 
-    const newIssue = {
+    const newIssue = persistedIssue || {
       _id: `iss-${Date.now()}`,
       title: formData.title,
       category: formData.category,
@@ -181,7 +184,8 @@ const Home = () => {
       priority: formData.priority,
       upvotes: 1,
       date: 'Just now',
-      description: formData.description
+      description: formData.description,
+      image: formData.image ? URL.createObjectURL(formData.image) : undefined,
     };
 
     dispatch(createIssueSuccess(newIssue));
@@ -196,7 +200,8 @@ const Home = () => {
         category: 'Road',
         location: '',
         description: '',
-        priority: 'Medium'
+        priority: 'Medium',
+        image: null,
       });
       const issuesSection = document.getElementById('issues');
       if (issuesSection) {

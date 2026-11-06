@@ -40,11 +40,34 @@ const getErrorMessage = (err) => {
     return 'An unexpected error occurred';
 };
 
+const toIssuePayload = (data) => {
+    if (typeof File === 'undefined' || !(data?.image instanceof File)) {
+        return data;
+    }
+
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'image' && value !== undefined && value !== null) {
+            formData.append(key, value);
+        }
+    });
+    formData.append('image', data.image);
+    return formData;
+};
+
+const getIssueRequestConfig = (payload) => ({
+    headers: {
+        ...getAuthHeaders(),
+        ...(typeof FormData !== 'undefined' && payload instanceof FormData
+            ? { 'Content-Type': 'multipart/form-data' }
+            : {}),
+    },
+});
+
 export async function createIssue(data) {
     try {
-        const response = await Api.post('issues/create', data, {
-            headers: getAuthHeaders()
-        });
+        const payload = toIssuePayload(data);
+        const response = await Api.post('issues/create', payload, getIssueRequestConfig(payload));
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -103,9 +126,8 @@ export async function getSingleIssue(id) {
 
 export async function updateIssue(id, updates) {
     try {
-        const response = await Api.patch(`issues/${id}`, updates, {
-            headers: getAuthHeaders()
-        });
+        const payload = toIssuePayload(updates);
+        const response = await Api.patch(`issues/${id}`, payload, getIssueRequestConfig(payload));
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));

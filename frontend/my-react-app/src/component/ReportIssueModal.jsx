@@ -1,3 +1,5 @@
+import IssueImageInput from '../features/issues/components/IssueImageInput';
+
 export default function ReportIssueModal({
   isOpen,
   onClose,
@@ -122,6 +124,11 @@ export default function ReportIssueModal({
                 ></textarea>
               </div>
 
+              <IssueImageInput
+                value={formData.image}
+                onChange={(image) => onFormChange({ ...formData, image })}
+              />
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -145,4 +152,3 @@ export default function ReportIssueModal({
     </div>
   );
 }
-
