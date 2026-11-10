@@ -10,40 +10,6 @@ import ReportIssueView from '../components/ReportIssueView';
 import ProfileView from '../components/ProfileView';
 import IssueModal from '../../issues/components/IssueModal';
 
-// Sample fallback complaints matching the user's design image if newly registered user has no issues yet
-const SAMPLE_COMPLAINTS = [
-  {
-    _id: 'sample-1',
-    title: 'Water leakage near park',
-    location: 'Ballabgarh, Ward 12',
-    category: 'Water',
-    status: 'In Progress',
-    priority: 'High',
-    description: 'Clean drinking water pipe burst causing water logging on sidewalk.',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: 'sample-2',
-    title: 'Broken street light',
-    location: 'Sector 23',
-    category: 'Streetlight',
-    status: 'Reported',
-    priority: 'Medium',
-    description: 'Streetlight has been flickering for 4 days, making the road unsafe at night.',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: 'sample-3',
-    title: 'Road pothole',
-    location: 'Main Market',
-    category: 'Pothole',
-    status: 'Resolved',
-    priority: 'High',
-    description: 'Deep road cavity causing severe traffic slowdown and vehicle tire damage.',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export default function UserDashboard() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
@@ -96,17 +62,14 @@ export default function UserDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  // Compute active complaints list (uses Redux issues, or samples if empty)
+  // Real user complaints list (pure backend data, no dummy items)
   const userComplaints = useMemo(() => {
-    if (Array.isArray(issues) && issues.length > 0) {
-      return issues;
-    }
-    return SAMPLE_COMPLAINTS;
+    return Array.isArray(issues) ? issues : [];
   }, [issues]);
 
-  // Calculate statistics dynamically
+  // Calculate statistics dynamically from real backend issues
   const stats = useMemo(() => {
-    const list = userComplaints || [];
+    const list = userComplaints;
     return {
       total: list.length,
       inProgress: list.filter((i) => i.status === 'In Progress').length,
@@ -138,7 +101,12 @@ export default function UserDashboard() {
     try {
       await createIssue(formData);
       showToast('Complaint reported successfully! Municipal team notified.');
-      setActiveTab('dashboard');
+      setActiveTab('complaints');
+      // Refresh to ensure sync with database
+      fetchMyIssues().catch(() => {});
+    } catch (err) {
+      showToast(err?.message || 'Failed to submit complaint. Please try again.');
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
@@ -167,15 +135,13 @@ export default function UserDashboard() {
     setSubmitSuccess('');
 
     try {
-      if (!editingIssue._id.startsWith('sample-')) {
-        await updateExistingIssue(editingIssue._id, editFormData);
-      }
-
+      await updateExistingIssue(editingIssue._id, editFormData);
       setSubmitSuccess('Changes saved successfully!');
       setTimeout(() => {
         setEditingIssue(null);
         setSubmitSuccess('');
         showToast('Complaint updated successfully.');
+        fetchMyIssues().catch(() => {});
       }, 900);
     } catch (err) {
       setSubmitError(err?.message || 'Failed to update issue.');
@@ -188,10 +154,9 @@ export default function UserDashboard() {
     if (!window.confirm('Are you sure you want to delete this complaint?')) return;
 
     try {
-      if (!id.startsWith('sample-')) {
-        await removeIssue(id);
-      }
+      await removeIssue(id);
       showToast('Complaint deleted.');
+      fetchMyIssues().catch(() => {});
     } catch (err) {
       alert(err?.message || 'Failed to delete complaint.');
     }
@@ -216,7 +181,8 @@ export default function UserDashboard() {
         <DashboardTopBar
           user={user}
           onOpenSidebar={() => setMobileSidebarOpen(true)}
-          unreadCount={1}
+          unreadCount={userComplaints.filter((i) => i.status === 'In Progress').length}
+          recentIssues={userComplaints.slice(0, 3)}
         />
 
         {/* Toast Feedback */}
@@ -226,7 +192,7 @@ export default function UserDashboard() {
             <button
               type="button"
               onClick={() => setToastMessage('')}
-              className="font-bold opacity-80 hover:opacity-100"
+              className="font-bold opacity-80 hover:opacity-100 cursor-pointer"
             >
               ✕
             </button>

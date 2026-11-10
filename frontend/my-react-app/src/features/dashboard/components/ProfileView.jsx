@@ -35,10 +35,10 @@ export default function ProfileView({ user, stats }) {
           <div className="text-center sm:text-left flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <h2 className="text-xl font-bold text-slate-900 capitalize">
-                {user?.name || 'Deepanshu'}
+                {user?.name || (user?.email ? user.email.split('@')[0] : 'Citizen')}
               </h2>
               <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 capitalize self-center sm:self-auto">
-                {user?.role || 'User'}
+                {user?.role || 'Citizen'}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">{user?.email}</p>

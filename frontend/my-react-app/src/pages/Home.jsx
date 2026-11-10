@@ -77,11 +77,12 @@ const Home = () => {
   useEffect(() => {
     fetchAllIssues()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setIssuesList(data);
         }
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Form state for reporting issue
@@ -188,7 +189,9 @@ const Home = () => {
       image: formData.image ? URL.createObjectURL(formData.image) : undefined,
     };
 
-    dispatch(createIssueSuccess(newIssue));
+    if (!isAuthenticated) {
+      dispatch(createIssueSuccess(newIssue));
+    }
     setIssuesList((prev) => [newIssue, ...prev]);
     setReportSuccess(true);
 

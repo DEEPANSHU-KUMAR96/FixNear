@@ -147,14 +147,10 @@ const useIssue = () => {
     };
 
     const upvoteIssue = async (id) => {
-        try {
-            const res = await upvoteIssueApi(id);
-            const updated = res?.issue || res;
-            dispatch(upvoteIssueSuccess(updated));
-            return res;
-        } catch (err) {
-            throw err;
-        }
+        const res = await upvoteIssueApi(id);
+        const updated = res?.issue || res;
+        dispatch(upvoteIssueSuccess(updated));
+        return res;
     };
 
     return {

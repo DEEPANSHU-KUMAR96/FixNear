@@ -3,9 +3,28 @@ import axios from 'axios';
 const API_URL = axios.create({
     baseURL: import.meta.env.VITE_URL || 'http://localhost:3000/api/',
     withCredentials: true,
-    headers: {
-        'Content-Type': 'application/json'
+});
+
+export const getStoredAccessToken = () => {
+    const raw = localStorage.getItem('token');
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed === 'string' ? parsed : raw;
+    } catch {
+        return raw;
     }
+};
+
+API_URL.interceptors.request.use((config) => {
+    const token = getStoredAccessToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+    }
+    return config;
 });
 
 const getErrorMessage = (err) => {
@@ -54,23 +73,9 @@ export async function loginUser(email, password){
     }
 }
 
-export const getStoredAccessToken = () => {
-    const raw = localStorage.getItem('token');
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        return typeof parsed === 'string' ? parsed : raw;
-    } catch {
-        return raw;
-    }
-};
-
 export async function logoutUser(){
     try{
-        const token = getStoredAccessToken();
-        await API_URL.post('auth/logout', {}, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        await API_URL.post('auth/logout', {});
         localStorage.removeItem('token');
         return {
             user: null,
@@ -78,6 +83,7 @@ export async function logoutUser(){
             isAuthenticated: false
         };
     }catch(err){
+        localStorage.removeItem('token');
         const errorObj = new Error(getErrorMessage(err));
         throw errorObj;
     }
@@ -85,10 +91,7 @@ export async function logoutUser(){
 
 export async function getUser(){
     try{
-        const token = getStoredAccessToken();
-        const res = await API_URL.get('auth/me', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        const res = await API_URL.get('auth/me');
         return res.data;
     }catch(err){
         const errorObj = new Error(getErrorMessage(err));

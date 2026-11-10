@@ -3,9 +3,6 @@ import axios from 'axios';
 const Api = axios.create({
     baseURL: import.meta.env.VITE_URL || 'http://localhost:3000/api/',
     withCredentials: true,
-    headers: {
-        'Content-Type': 'application/json'
-    }
 });
 
 const getToken = () => {
@@ -19,10 +16,19 @@ const getToken = () => {
     }
 };
 
-const getAuthHeaders = () => {
+// Automatic Authorization and Content-Type negotiation
+Api.interceptors.request.use((config) => {
     const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+    } else if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+    }
+    return config;
+});
 
 const getErrorMessage = (err) => {
     if (err.response?.data?.message) {
@@ -41,33 +47,28 @@ const getErrorMessage = (err) => {
 };
 
 const toIssuePayload = (data) => {
-    if (typeof File === 'undefined' || !(data?.image instanceof File)) {
-        return data;
+    if (typeof File !== 'undefined' && data?.image instanceof File) {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
+            if (key !== 'image' && value !== undefined && value !== null) {
+                formData.append(key, value);
+            }
+        });
+        formData.append('image', data.image);
+        return formData;
     }
 
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'image' && value !== undefined && value !== null) {
-            formData.append(key, value);
-        }
-    });
-    formData.append('image', data.image);
-    return formData;
+    const payload = { ...data };
+    if (!payload.image) {
+        delete payload.image;
+    }
+    return payload;
 };
-
-const getIssueRequestConfig = (payload) => ({
-    headers: {
-        ...getAuthHeaders(),
-        ...(typeof FormData !== 'undefined' && payload instanceof FormData
-            ? { 'Content-Type': 'multipart/form-data' }
-            : {}),
-    },
-});
 
 export async function createIssue(data) {
     try {
         const payload = toIssuePayload(data);
-        const response = await Api.post('issues/create', payload, getIssueRequestConfig(payload));
+        const response = await Api.post('issues/create', payload);
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -78,9 +79,7 @@ export async function createIssue(data) {
 
 export async function getAllIssues() {
     try {
-        const response = await Api.get('issues/all', {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.get('issues/all');
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -90,9 +89,7 @@ export async function getAllIssues() {
 
 export async function getMyIssues() {
     try {
-        const response = await Api.get('issues/get-issue', {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.get('issues/get-issue');
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -102,9 +99,7 @@ export async function getMyIssues() {
 
 export async function searchIssues(query = '') {
     try {
-        const response = await Api.get(`issues/my?search=${encodeURIComponent(query)}`, {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.get(`issues/my?search=${encodeURIComponent(query)}`);
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -114,9 +109,7 @@ export async function searchIssues(query = '') {
 
 export async function getSingleIssue(id) {
     try {
-        const response = await Api.get(`issues/${id}`, {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.get(`issues/${id}`);
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -127,7 +120,7 @@ export async function getSingleIssue(id) {
 export async function updateIssue(id, updates) {
     try {
         const payload = toIssuePayload(updates);
-        const response = await Api.patch(`issues/${id}`, payload, getIssueRequestConfig(payload));
+        const response = await Api.patch(`issues/${id}`, payload);
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -137,9 +130,7 @@ export async function updateIssue(id, updates) {
 
 export async function updateIssueStatus(id, status) {
     try {
-        const response = await Api.patch(`issues/${id}/status`, { status }, {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.patch(`issues/${id}/status`, { status });
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -149,9 +140,7 @@ export async function updateIssueStatus(id, status) {
 
 export async function deleteIssue(id) {
     try {
-        const response = await Api.delete(`issues/${id}`, {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.delete(`issues/${id}`);
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));
@@ -161,9 +150,7 @@ export async function deleteIssue(id) {
 
 export async function upvoteIssue(id) {
     try {
-        const response = await Api.post(`issues/${id}/upvote`, {}, {
-            headers: getAuthHeaders()
-        });
+        const response = await Api.post(`issues/${id}/upvote`, {});
         return response.data;
     } catch (err) {
         const error = new Error(getErrorMessage(err));

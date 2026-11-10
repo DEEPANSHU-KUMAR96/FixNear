@@ -16,7 +16,7 @@ export default function DashboardOverview({
       {/* Welcome Greeting Banner */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Welcome back, {user?.name || 'Deepanshu'}!
+          Welcome back{user?.name ? `, ${user.name}` : ''}!
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           Here&apos;s an overview of your complaints
