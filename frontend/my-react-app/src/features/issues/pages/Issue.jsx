@@ -22,7 +22,6 @@ const Issue = () => {
     fetchAllIssues,
     fetchMyIssues,
     updateExistingIssue,
-    updateStatus,
     removeIssue,
     upvoteIssue,
     clearError
@@ -130,14 +129,6 @@ const Issue = () => {
       await removeIssue(id);
     } catch (err) {
       alert(err?.message || 'Failed to delete issue');
-    }
-  };
-
-  const handleQuickStatusChange = async (id, newStatus) => {
-    try {
-      await updateStatus(id, newStatus);
-    } catch (err) {
-      alert(err?.message || 'Failed to update status');
     }
   };
 
@@ -305,7 +296,6 @@ const Issue = () => {
                   isOwner={isOwner}
                   currentUserId={user?.id || user?._id}
                   onUpvote={handleUpvoteIssue}
-                  onStatusChange={handleQuickStatusChange}
                   onEdit={handleOpenEditModal}
                   onDelete={handleDeleteIssue}
                 />

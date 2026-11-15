@@ -148,7 +148,9 @@ export const getSingleIssue = async (req, res) => {
 
 export const updateIssue = async (req, res) => {
     const updates = req.body;
-    const allowedFields = ["title", "description", "category", "location", "status", "priority"];
+    const allowedFields = req.user?.role === "admin"
+        ? ["title", "description", "category", "location", "status", "priority"]
+        : ["title", "description", "category", "location", "priority"];
 
     if (!updates || typeof updates !== "object" || Array.isArray(updates) ||
         (!allowedFields.some((field) => Object.hasOwn(updates, field)) && !req.file)) {
@@ -232,6 +234,13 @@ export const deleteIssue = async (req, res) => {
 };
 
 export const updateIssueStatus = async (req, res) => {
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({
+            success: false,
+            message: "Access denied. Only admin can change issue status.",
+        });
+    }
+
     try {
         const { status } = req.body;
 

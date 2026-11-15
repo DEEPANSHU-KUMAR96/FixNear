@@ -3,7 +3,6 @@ export default function IssueCard({
     isOwner,
     currentUserId,
     onUpvote,
-    onStatusChange,
     onEdit,
     onDelete,
 }) {
@@ -111,22 +110,10 @@ export default function IssueCard({
                             title={isUpvoted ? "Remove upvote" : "Upvote this issue"}
                         >
                             <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                             </svg>
                             <span>Upvote ({upvotesCount})</span>
                         </button>
-
-                        {/* Status toggle selector */}
-                        <select
-                            value={item.status}
-                            onChange={(e) => onStatusChange(item._id, e.target.value)}
-                            className="text-[11px] font-medium py-1.5 px-2 border border-slate-200 rounded-md bg-slate-50 focus:outline-none focus:border-emerald-500 cursor-pointer"
-                            title="Update Status"
-                        >
-                            <option value="Reported">Reported</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                        </select>
                     </div>
 
                     {/* Owner actions (Edit / Delete) */}
