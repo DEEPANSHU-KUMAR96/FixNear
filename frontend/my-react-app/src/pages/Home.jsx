@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import Navbar from '../component/Navbar';
 import HeroSection from '../component/HeroSection';
 import IssuesDemoSection from '../component/IssuesDemoSection';
@@ -7,8 +8,6 @@ import AboutSection from '../component/AboutSection';
 import ContactSection from '../component/ContactSection';
 import FooterSection from '../component/FooterSection';
 import ReportIssueModal from '../component/ReportIssueModal';
-import { useDispatch } from 'react-redux';
-import { createIssueSuccess } from '../features/issues/state/issueSlice';
 import useAuth from '../features/auth/hooks/useAuth';
 import useIssue from '../features/issues/hooks/useIssue';
 import { createContact } from '../features/contact/services/contact.service';
@@ -63,7 +62,7 @@ const INITIAL_ISSUES = [
 const CATEGORIES = ['All', 'Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
 
 const Home = () => {
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const { createIssue, fetchAllIssues, upvoteIssue } = useIssue();
 
@@ -105,24 +104,19 @@ const Home = () => {
   const [contactError, setContactError] = useState('');
   const [contactSuccess, setContactSuccess] = useState('');
 
+  const handleOpenReportModal = () => {
+    if (!isAuthenticated) {
+      alert('Please log in to report an issue.');
+      navigate('/login');
+      return;
+    }
+    setIsReportModalOpen(true);
+  };
+
   const handleUpvote = async (id) => {
     if (!isAuthenticated) {
-      // Local optimistic increment for non-logged in users
-      setIssuesList((prev) =>
-        prev.map((iss) => {
-          if (iss._id === id) {
-            const count = typeof iss.upvotesCount === 'number'
-              ? iss.upvotesCount
-              : (Array.isArray(iss.upvotes) ? iss.upvotes.length : (iss.upvotes || 0));
-            return {
-              ...iss,
-              upvotesCount: count + 1,
-              upvotes: count + 1,
-            };
-          }
-          return iss;
-        })
-      );
+      alert('Please log in to upvote issues.');
+      navigate('/login');
       return;
     }
 
@@ -136,22 +130,7 @@ const Home = () => {
       }
     } catch (err) {
       console.error('Failed to upvote on backend:', err);
-      // Fallback optimistic update
-      setIssuesList((prev) =>
-        prev.map((iss) => {
-          if (iss._id === id) {
-            const count = typeof iss.upvotesCount === 'number'
-              ? iss.upvotesCount
-              : (Array.isArray(iss.upvotes) ? iss.upvotes.length : (iss.upvotes || 0));
-            return {
-              ...iss,
-              upvotesCount: count + 1,
-              upvotes: count + 1,
-            };
-          }
-          return iss;
-        })
-      );
+      alert(err?.message || 'Failed to update upvote');
     }
   };
 
@@ -159,58 +138,44 @@ const Home = () => {
     e.preventDefault();
     setReportError('');
 
+    if (!isAuthenticated) {
+      setReportError('Please log in to report an issue.');
+      navigate('/login');
+      return;
+    }
+
     if (!formData.title || !formData.location || !formData.description) {
       setReportError('Please fill in title, location and description.');
       return;
     }
 
-    // If authenticated, persist directly to backend
-    let persistedIssue;
-    if (isAuthenticated) {
-      try {
-        const response = await createIssue(formData);
-        persistedIssue = response?.issue;
-      } catch (err) {
-        setReportError(err?.message || 'Failed to submit issue to backend.');
-        return;
+    try {
+      const response = await createIssue(formData);
+      const newIssue = response?.issue;
+      if (newIssue) {
+        setIssuesList((prev) => [newIssue, ...prev]);
       }
+      setReportSuccess(true);
+
+      setTimeout(() => {
+        setReportSuccess(false);
+        setIsReportModalOpen(false);
+        setFormData({
+          title: '',
+          category: 'Road',
+          location: '',
+          description: '',
+          priority: 'Medium',
+          image: null,
+        });
+        const issuesSection = document.getElementById('issues');
+        if (issuesSection) {
+          issuesSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 1200);
+    } catch (err) {
+      setReportError(err?.message || 'Failed to submit issue to backend.');
     }
-
-    const newIssue = persistedIssue || {
-      _id: `iss-${Date.now()}`,
-      title: formData.title,
-      category: formData.category,
-      location: formData.location,
-      status: 'Reported',
-      priority: formData.priority,
-      upvotes: 1,
-      date: 'Just now',
-      description: formData.description,
-      image: formData.image ? URL.createObjectURL(formData.image) : undefined,
-    };
-
-    if (!isAuthenticated) {
-      dispatch(createIssueSuccess(newIssue));
-    }
-    setIssuesList((prev) => [newIssue, ...prev]);
-    setReportSuccess(true);
-
-    setTimeout(() => {
-      setReportSuccess(false);
-      setIsReportModalOpen(false);
-      setFormData({
-        title: '',
-        category: 'Road',
-        location: '',
-        description: '',
-        priority: 'Medium',
-        image: null,
-      });
-      const issuesSection = document.getElementById('issues');
-      if (issuesSection) {
-        issuesSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 1200);
   };
 
   const handleContactSubmit = async (e) => {
@@ -234,7 +199,7 @@ const Home = () => {
     <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans">
       <Navbar />
 
-      <HeroSection onOpenReportModal={() => setIsReportModalOpen(true)} />
+      <HeroSection onOpenReportModal={handleOpenReportModal} />
 
       <IssuesDemoSection
         issuesList={issuesList}
@@ -242,13 +207,13 @@ const Home = () => {
         categories={CATEGORIES}
         onCategoryChange={setSelectedCategory}
         onUpvote={handleUpvote}
-        onOpenReportModal={() => setIsReportModalOpen(true)}
+        onOpenReportModal={handleOpenReportModal}
         currentUserId={user?.id || user?._id}
       />
 
       <HowItWorksSection />
 
-      <AboutSection onOpenReportModal={() => setIsReportModalOpen(true)} />
+      <AboutSection onOpenReportModal={handleOpenReportModal} />
 
       <ContactSection
         contactForm={contactForm}
@@ -269,6 +234,7 @@ const Home = () => {
         formData={formData}
         onFormChange={setFormData}
         onSubmit={handleReportSubmit}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

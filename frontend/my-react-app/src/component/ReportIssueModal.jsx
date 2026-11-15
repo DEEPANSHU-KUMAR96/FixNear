@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import IssueImageInput from '../features/issues/components/IssueImageInput';
 
 export default function ReportIssueModal({
@@ -8,6 +9,7 @@ export default function ReportIssueModal({
   formData,
   onFormChange,
   onSubmit,
+  isAuthenticated = true,
 }) {
   if (!isOpen) return null;
 
@@ -26,7 +28,31 @@ export default function ReportIssueModal({
           </svg>
         </button>
 
-        {reportSuccess ? (
+        {!isAuthenticated ? (
+          <div className="text-center py-6">
+            <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+              🔒
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Sign In Required</h3>
+            <p className="text-slate-600 text-xs sm:text-sm mb-6 max-w-sm mx-auto">
+              To report and track issues with your verified citizen profile, please log in or create an account.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                to="/login"
+                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/register"
+                className="px-5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        ) : reportSuccess ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
               ✓
