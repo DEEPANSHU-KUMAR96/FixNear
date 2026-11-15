@@ -1,4 +1,5 @@
 import Issue from "../models/issue.model.js";
+import Notification from "../models/notification.model.js";
 import { uploadIssueImage } from "../services/imagekit.service.js";
 
 const uploadImageFromRequest = async (req, res) => {
@@ -43,6 +44,15 @@ export const createIssue = async (req, res) => {
             priority: priority || "Medium",
             createdBy: req.user._id,
         });
+
+        await Notification.create({
+            userId: req.user._id,
+            title: "Issue Reported",
+            message: `Your complaint "${issue.title}" has been registered successfully.`,
+            type: "issue_created",
+            issueId: issue._id,
+            read: false,
+        }).catch(() => {});
 
         return res.status(201).json({
             success: true,
@@ -256,6 +266,17 @@ export const updateIssueStatus = async (req, res) => {
 
         await issue.save();
 
+        if (issue.createdBy) {
+            await Notification.create({
+                userId: issue.createdBy,
+                title: "Issue Status Updated",
+                message: `Your complaint "${issue.title}" status is now "${status}".`,
+                type: "status_change",
+                issueId: issue._id,
+                read: false,
+            }).catch(() => {});
+        }
+
         return res.status(200).json({
             success: true,
             message: "Issue status updated successfully",
@@ -346,6 +367,17 @@ export const toggleUpvoteIssue = async (req, res) => {
 
         issue.upvotesCount = issue.upvotes.length;
         await issue.save();
+
+        if (isUpvoted && issue.createdBy && issue.createdBy.toString() !== userId.toString()) {
+            await Notification.create({
+                userId: issue.createdBy,
+                title: "New Upvote Received",
+                message: `Your issue "${issue.title}" received a new community upvote.`,
+                type: "upvote",
+                issueId: issue._id,
+                read: false,
+            }).catch(() => {});
+        }
 
         await issue.populate("createdBy", "name email");
 

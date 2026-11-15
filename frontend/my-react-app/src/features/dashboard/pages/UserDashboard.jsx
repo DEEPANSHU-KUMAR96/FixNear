@@ -181,8 +181,7 @@ export default function UserDashboard() {
         <DashboardTopBar
           user={user}
           onOpenSidebar={() => setMobileSidebarOpen(true)}
-          unreadCount={userComplaints.filter((i) => i.status === 'In Progress').length}
-          recentIssues={userComplaints.slice(0, 3)}
+          recentIssues={userComplaints}
         />
 
         {/* Toast Feedback */}

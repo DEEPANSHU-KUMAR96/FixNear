@@ -8,6 +8,7 @@ import authRouter from './routes/auth.routes.js';
 import issueRouter from './routes/issue.routes.js';
 import contactRouter from './routes/contact.routes.js';
 import adminRouter from './routes/admin.routes.js';
+import notificationRouter from './routes/notification.routes.js';
 
 const app = express();
 
@@ -40,5 +41,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/issues", issueRouter);
 app.use("/api/contacts", contactRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/notifications", notificationRouter);
 
 export default app;
