@@ -43,6 +43,9 @@ if(!process.env.IMAGEKIT_PRIVATE_KEY) {
 if(!process.env.GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is not defined")
 }
+if(!process.env.GROQ_MODEL){
+    throw new Error("GROQ_MODEL is not defined")
+}
 
 export const config = {
     PORT: process.env.PORT,
@@ -57,6 +60,7 @@ export const config = {
     IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY?.trim(),
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY?.trim(),
     GROQ_API_KEY: process.env.GROQ_API_KEY?.trim(),
+    GROQ_MODEL: process.env.GROQ_MODEL,
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
     NODE_ENV: process.env.NODE_ENV
 };
