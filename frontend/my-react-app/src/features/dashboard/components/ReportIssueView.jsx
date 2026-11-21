@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import useAiClassify from '../../ai/hooks/useAiClassify';
+import AiSuggestionBadge from '../../ai/components/AiSuggestionBadge';
 
 const CATEGORIES = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
@@ -13,6 +15,7 @@ const ALLOWED_IMAGE_TYPES = new Set([
 
 export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
   const fileInputRef = useRef(null);
+  const { classify, isClassifying, result: aiResult, error: aiError, clearResult } = useAiClassify();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,6 +63,17 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
     }
   };
 
+  const handleAiClassify = async () => {
+    const data = await classify({ title: formData.title, description: formData.description });
+    if (data) {
+      const validCategories = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
+      const aiCategory = validCategories.includes(data.category) ? data.category : formData.category;
+      const validPriorities = ['Low', 'Medium', 'High'];
+      const aiPriority = validPriorities.includes(data.priority) ? data.priority : formData.priority;
+      setFormData((prev) => ({ ...prev, category: aiCategory, priority: aiPriority }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -67,6 +81,10 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
 
     if (!formData.title.trim()) {
       setError('Please enter a title for the issue.');
+      return;
+    }
+    if (formData.title.trim().length < 6) {
+      setError('Title must be at least 6 characters long.');
       return;
     }
     if (!formData.description.trim()) {
@@ -166,10 +184,12 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
         <div>
           <label className="block text-sm font-semibold text-slate-800 mb-1.5">
             Title <span className="text-red-500 font-bold">*</span>
+            <span className="text-xs font-normal text-slate-400 ml-1">(min 6, max 50 chars)</span>
           </label>
           <input
             type="text"
             required
+            minLength={6}
             maxLength={50}
             placeholder="e.g. Water leakage near park"
             value={formData.title}
@@ -180,9 +200,30 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-            Description <span className="text-red-500 font-bold">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-semibold text-slate-800">
+              Description <span className="text-red-500 font-bold">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleAiClassify}
+              disabled={isClassifying || !formData.title.trim() || !formData.description.trim()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title="Fill in title and description first, then click to auto-classify"
+            >
+              {isClassifying ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  Classifying...
+                </>
+              ) : (
+                <>✨ Suggest with AI</>
+              )}
+            </button>
+          </div>
           <textarea
             rows={4}
             required
@@ -193,6 +234,18 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition min-h-[110px] resize-y shadow-2xs"
           />
         </div>
+
+        {/* AI error */}
+        {aiError && (
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+            {aiError}
+          </div>
+        )}
+
+        {/* AI suggestion badge */}
+        {aiResult && (
+          <AiSuggestionBadge result={aiResult} onDismiss={clearResult} />
+        )}
 
         {/* Category & Priority Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

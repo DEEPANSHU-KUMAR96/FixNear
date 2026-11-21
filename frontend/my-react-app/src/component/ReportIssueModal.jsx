@@ -1,5 +1,7 @@
 import { Link } from 'react-router';
 import IssueImageInput from '../features/issues/components/IssueImageInput';
+import useAiClassify from '../features/ai/hooks/useAiClassify';
+import AiSuggestionBadge from '../features/ai/components/AiSuggestionBadge';
 
 export default function ReportIssueModal({
   isOpen,
@@ -11,7 +13,20 @@ export default function ReportIssueModal({
   onSubmit,
   isAuthenticated = true,
 }) {
+  const { classify, isClassifying, result, error: aiError, clearResult } = useAiClassify();
+
   if (!isOpen) return null;
+
+  const handleAiClassify = async () => {
+    const data = await classify({ title: formData.title, description: formData.description });
+    if (data) {
+      const validCategories = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
+      const aiCategory = validCategories.includes(data.category) ? data.category : formData.category;
+      const validPriorities = ['Low', 'Medium', 'High'];
+      const aiPriority = validPriorities.includes(data.priority) ? data.priority : formData.priority;
+      onFormChange({ ...formData, category: aiCategory, priority: aiPriority });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
@@ -82,10 +97,11 @@ export default function ReportIssueModal({
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Issue Title (max 50 chars)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Issue Title (min 6, max 50 chars)</label>
                 <input
                   type="text"
                   required
+                  minLength={6}
                   maxLength={50}
                   placeholder="e.g. Broken streetlight near park entrance"
                   value={formData.title}
@@ -93,6 +109,53 @@ export default function ReportIssueModal({
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
+
+              {/* Description + AI button */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">Description (max 500 chars)</label>
+                  <button
+                    type="button"
+                    onClick={handleAiClassify}
+                    disabled={isClassifying || !formData.title.trim() || !formData.description.trim()}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    title="Fill in title and description first"
+                  >
+                    {isClassifying ? (
+                      <>
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Classifying...
+                      </>
+                    ) : (
+                      <>✨ Suggest with AI</>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  rows="3"
+                  required
+                  maxLength={500}
+                  placeholder="Give additional context (e.g. size, duration of issue, hazard to traffic)..."
+                  value={formData.description}
+                  onChange={(e) => onFormChange({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                ></textarea>
+              </div>
+
+              {/* AI error */}
+              {aiError && (
+                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                  {aiError}
+                </div>
+              )}
+
+              {/* AI result badge */}
+              {result && (
+                <AiSuggestionBadge result={result} onDismiss={clearResult} />
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -135,19 +198,6 @@ export default function ReportIssueModal({
                   onChange={(e) => onFormChange({ ...formData, location: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Description (max 500 chars)</label>
-                <textarea
-                  rows="3"
-                  required
-                  maxLength={500}
-                  placeholder="Give additional context (e.g. size, duration of issue, hazard to traffic)..."
-                  value={formData.description}
-                  onChange={(e) => onFormChange({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                ></textarea>
               </div>
 
               <IssueImageInput
