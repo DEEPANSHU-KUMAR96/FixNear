@@ -65,7 +65,13 @@ const issueSchema = mongoose.Schema({
     history: {
         type: Array,
         default: [],
-    }
+    },
+    
+    duplicateOf: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Issue',
+    default: null,
+}
 }, { timestamps: true });
 
 const Issue = mongoose.model("Issue", issueSchema);
