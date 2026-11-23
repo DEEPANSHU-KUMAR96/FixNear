@@ -1,4 +1,14 @@
 import { classifyIssue } from "../services/ai.service.js";
+import { findDuplicateIssues } from "../services/duplicate.service.js";
+
+const allowedCategories = [
+    "Garbage",
+    "Road",
+    "Streetlight",
+    "Water",
+    "Pothole",
+    "Sanitation",
+];
 
 export const classifyIssueController = async (req, res) => {
     try {
@@ -42,6 +52,64 @@ export const classifyIssueController = async (req, res) => {
         return res.status(502).json({
             success: false,
             message: "Unable to classify issue right now",
+        });
+    }
+};
+
+export const checkDuplicateIssuesController = async (req, res) => {
+    try {
+        const { title, description, category, location } = req.body;
+
+        if (
+            typeof title !== "string" ||
+            typeof description !== "string" ||
+            typeof category !== "string" ||
+            typeof location !== "string" ||
+            !title.trim() ||
+            !description.trim() ||
+            !category.trim() ||
+            !location.trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Title, description, category and location are required",
+            });
+        }
+
+        if (title.length > 50 || description.length > 500) {
+            return res.status(400).json({
+                success: false,
+                message: "Title or description exceeds allowed length",
+            });
+        }
+
+        if (!allowedCategories.includes(category.trim())) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid issue category",
+            });
+        }
+
+        const result = await findDuplicateIssues({
+            title: title.trim(),
+            description: description.trim(),
+            category: category.trim(),
+            location: location.trim(),
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: result.hasDuplicates
+                ? "Potential duplicate issues found"
+                : "No duplicate issues found",
+            ...result,
+        });
+    } catch (error) {
+        console.error("AI duplicate detection error:", error);
+
+        return res.status(502).json({
+            success: false,
+            message: "Unable to check duplicate issues right now",
         });
     }
 };

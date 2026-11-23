@@ -22,7 +22,7 @@ const model = new ChatGroq({
 
 const structuredModel = model.withStructuredOutput(
     duplicateSchema,
-    { method: "function_calling" }
+    { method: "functionCalling" }
 );
 
 const duplicateChain = duplicateIssuePrompt.pipe(structuredModel);
