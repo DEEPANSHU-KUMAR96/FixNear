@@ -58,7 +58,7 @@ export const classifyIssueController = async (req, res) => {
 
 export const checkDuplicateIssuesController = async (req, res) => {
     try {
-        const { title, description, category, location } = req.body;
+        const { title, description, category, location, excludeIssueId } = req.body;
 
         if (
             typeof title !== "string" ||
@@ -76,12 +76,8 @@ export const checkDuplicateIssuesController = async (req, res) => {
             });
         }
 
-        if (title.length > 50 || description.length > 500) {
-            return res.status(400).json({
-                success: false,
-                message: "Title or description exceeds allowed length",
-            });
-        }
+        const safeTitle = title.trim().slice(0, 100);
+        const safeDescription = description.trim().slice(0, 1000);
 
         if (!allowedCategories.includes(category.trim())) {
             return res.status(400).json({
@@ -91,10 +87,11 @@ export const checkDuplicateIssuesController = async (req, res) => {
         }
 
         const result = await findDuplicateIssues({
-            title: title.trim(),
-            description: description.trim(),
+            title: safeTitle,
+            description: safeDescription,
             category: category.trim(),
             location: location.trim(),
+            excludeIssueId: excludeIssueId ? String(excludeIssueId).trim() : undefined,
         });
 
         return res.status(200).json({

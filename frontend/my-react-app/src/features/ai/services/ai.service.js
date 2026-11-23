@@ -39,3 +39,26 @@ export const classifyIssue = async ({ title, description }) => {
     }
     throw new Error(response.data?.message || 'Classification failed');
 };
+
+/**
+ * Calls the AI check-duplicates endpoint.
+ * @param {{ title: string, description: string, category: string, location: string, excludeIssueId?: string }} payload
+ * @returns {Promise<{ hasDuplicates: boolean, duplicates: Array }>}
+ */
+export const checkDuplicates = async ({ title, description, category, location, excludeIssueId }) => {
+    const payload = {
+        title,
+        description,
+        category,
+        location,
+        ...(excludeIssueId ? { excludeIssueId } : {}),
+    };
+    const response = await Api.post('ai/check-duplicates', payload);
+    if (response.data?.success !== undefined) {
+        return {
+            hasDuplicates: response.data.hasDuplicates || false,
+            duplicates: response.data.duplicates || [],
+        };
+    }
+    throw new Error(response.data?.message || 'Duplicate check failed');
+};

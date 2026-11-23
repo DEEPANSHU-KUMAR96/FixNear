@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import useAiClassify from '../../ai/hooks/useAiClassify';
+import useAiDuplicates from '../../ai/hooks/useAiDuplicates';
 import AiSuggestionBadge from '../../ai/components/AiSuggestionBadge';
+import AiDuplicatesPanel from '../../ai/components/AiDuplicatesPanel';
 
 const CATEGORIES = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
@@ -16,6 +18,11 @@ const ALLOWED_IMAGE_TYPES = new Set([
 export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
   const fileInputRef = useRef(null);
   const { classify, isClassifying, result: aiResult, error: aiError, clearResult } = useAiClassify();
+  const {
+    checkForDuplicates, isChecking: isDupChecking,
+    result: dupResult, error: dupError, clearResult: clearDupResult,
+  } = useAiDuplicates();
+  const [dupDismissed, setDupDismissed] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -29,6 +36,10 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // AI helpers
+  const canClassify = formData.title.trim().length >= 6 && formData.description.trim().length >= 10;
+  const canCheckDups = canClassify && formData.category && formData.location.trim();
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -72,6 +83,16 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
       const aiPriority = validPriorities.includes(data.priority) ? data.priority : formData.priority;
       setFormData((prev) => ({ ...prev, category: aiCategory, priority: aiPriority }));
     }
+  };
+
+  const handleCheckDuplicates = async () => {
+    setDupDismissed(false);
+    await checkForDuplicates({
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      location: formData.location,
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -200,30 +221,9 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
 
         {/* Description */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-semibold text-slate-800">
-              Description <span className="text-red-500 font-bold">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={handleAiClassify}
-              disabled={isClassifying || !formData.title.trim() || !formData.description.trim()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              title="Fill in title and description first, then click to auto-classify"
-            >
-              {isClassifying ? (
-                <>
-                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                  </svg>
-                  Classifying...
-                </>
-              ) : (
-                <>✨ Suggest with AI</>
-              )}
-            </button>
-          </div>
+          <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+            Description <span className="text-red-500 font-bold">*</span>
+          </label>
           <textarea
             rows={4}
             required
@@ -235,17 +235,80 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
           />
         </div>
 
-        {/* AI error */}
-        {aiError && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">
-            {aiError}
-          </div>
-        )}
+        {/* ── AI Tools Card ── */}
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
+          <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🤖</span> AI Tools
+          </p>
 
-        {/* AI suggestion badge */}
-        {aiResult && (
-          <AiSuggestionBadge result={aiResult} onDismiss={clearResult} />
-        )}
+          {/* Two AI buttons */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={handleAiClassify}
+              disabled={isClassifying || !canClassify}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title={!canClassify ? 'Fill in title (6+ chars) and description first' : 'Auto-detect category and priority using AI'}
+            >
+              {isClassifying ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  Classifying...
+                </>
+              ) : <>✨ Suggest Category & Priority</>}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCheckDuplicates}
+              disabled={isDupChecking || !canCheckDups}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title={!canCheckDups ? 'Fill in title, description, category & location first' : 'Check if a similar issue was already reported'}
+            >
+              {isDupChecking ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  Checking...
+                </>
+              ) : <>🔍 Check Similar Issues</>}
+            </button>
+          </div>
+
+          {/* Progressive helper */}
+          <p className="text-xs text-indigo-500">
+            {!canClassify
+              ? '⬆ Fill title & description above to enable AI tools'
+              : !canCheckDups
+                ? '⬆ Also fill Category & Location below to enable duplicate check'
+                : '✓ All fields ready — both AI tools are active'}
+          </p>
+
+          {/* Classify error */}
+          {aiError && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">{aiError}</div>
+          )}
+          {/* Classify result */}
+          {aiResult && <AiSuggestionBadge result={aiResult} onDismiss={clearResult} />}
+
+          {/* Duplicate error */}
+          {dupError && !dupResult && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">{dupError}</div>
+          )}
+          {/* Duplicate result */}
+          {dupResult && !dupDismissed && (
+            <AiDuplicatesPanel
+              result={dupResult}
+              onDismiss={() => { clearDupResult(); setDupDismissed(true); }}
+              onProceedAnyway={() => setDupDismissed(true)}
+            />
+          )}
+        </div>
 
         {/* Category & Priority Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

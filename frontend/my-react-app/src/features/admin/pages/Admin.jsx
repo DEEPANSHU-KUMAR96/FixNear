@@ -17,6 +17,7 @@ import DashboardTab from "../components/DashboardTab";
 import IssuesTab from "../components/IssuesTab";
 import UsersTab from "../components/UsersTab";
 import InquiriesTab from "../components/InquiriesTab";
+import DuplicatesTab from "../components/DuplicatesTab";
 
 const Admin = () => {
     const { isAuthenticated, user, logout } = useAuth();
@@ -208,6 +209,14 @@ const Admin = () => {
                             loading={issuesLoading}
                             error={issuesError}
                             onStatusChange={handleIssueStatusChange}
+                            onDelete={handleIssueDelete}
+                            updatingId={issueUpdatingId}
+                        />
+                    )}
+                    {activeTab === "Duplicates" && (
+                        <DuplicatesTab
+                            issues={issues}
+                            loading={issuesLoading}
                             onDelete={handleIssueDelete}
                             updatingId={issueUpdatingId}
                         />

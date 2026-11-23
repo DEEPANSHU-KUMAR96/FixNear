@@ -27,20 +27,61 @@ const structuredModel = model.withStructuredOutput(
 
 const duplicateChain = duplicateIssuePrompt.pipe(structuredModel);
 
+// Map related civic categories so cross-category duplicates are detected (e.g. Garbage vs Sanitation)
+const RELATED_CATEGORIES = {
+    Garbage: ["Garbage", "Sanitation"],
+    Sanitation: ["Sanitation", "Garbage"],
+    Road: ["Road", "Pothole"],
+    Pothole: ["Pothole", "Road"],
+    Water: ["Water", "Drainage"],
+    Drainage: ["Drainage", "Water"],
+    Streetlight: ["Streetlight", "Electricity"],
+};
+
 export const findDuplicateIssues = async ({
     title,
     description,
     category,
     location,
+    excludeIssueId,
 }) => {
-    // 1. Find existing unresolved complaints
-    const candidates = await Issue.find({
-        category,
+    // 1. Find existing unresolved complaints across same or related categories, or same location
+    const categoriesToSearch = RELATED_CATEGORIES[category] || [category];
+
+    // Extract significant location keywords (words with 3+ characters)
+    const locationKeywords = location
+        ? location
+            .split(/[\s,]+/)
+            .map((w) => w.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+            .filter((w) => w.length >= 3)
+        : [];
+
+    const orConditions = [
+        { category: { $in: categoriesToSearch } },
+    ];
+
+    if (locationKeywords.length > 0) {
+        orConditions.push({
+            location: {
+                $regex: locationKeywords.slice(0, 3).join("|"),
+                $options: "i",
+            },
+        });
+    }
+
+    const filter = {
         status: { $ne: "Resolved" },
-    })
+        $or: orConditions,
+    };
+
+    if (excludeIssueId) {
+        filter._id = { $ne: excludeIssueId };
+    }
+
+    const candidates = await Issue.find(filter)
         .select("title description category location status createdAt")
         .sort({ createdAt: -1 })
-        .limit(15)
+        .limit(20)
         .lean();
 
     if (!candidates.length) {

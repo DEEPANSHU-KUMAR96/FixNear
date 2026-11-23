@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import IssueImageInput from './IssueImageInput';
 import useAiClassify from '../../ai/hooks/useAiClassify';
+import useAiDuplicates from '../../ai/hooks/useAiDuplicates';
 import AiSuggestionBadge from '../../ai/components/AiSuggestionBadge';
+import AiDuplicatesPanel from '../../ai/components/AiDuplicatesPanel';
 
 export default function IssueModal({
     isOpen,
@@ -16,22 +18,36 @@ export default function IssueModal({
     submitSuccess,
     isAuthenticated,
 }) {
-    const { classify, isClassifying, result, error: aiError, clearResult } = useAiClassify();
-    const [localAiError, setLocalAiError] = useState('');
+    const { classify, isClassifying, result: classifyResult, error: classifyError, clearResult: clearClassify } = useAiClassify();
+    const { checkForDuplicates, isChecking: isDupChecking, result: dupResult, error: dupError, clearResult: clearDupResult } = useAiDuplicates();
+    const [dupDismissed, setDupDismissed] = useState(false);
 
     if (!isOpen && !editingIssue) return null;
 
+    const canClassify = formData.title.trim().length >= 6 && formData.description.trim().length >= 10;
+    const canCheckDups = canClassify && formData.category && formData.location.trim();
+
     const handleAiClassify = async () => {
-        setLocalAiError('');
         const data = await classify({ title: formData.title, description: formData.description });
         if (data) {
-            // Map AI category to supported enum (backend allows Garbage/Road/Streetlight/Water/Pothole/Sanitation)
-            const validCategories = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
-            const aiCategory = validCategories.includes(data.category) ? data.category : formData.category;
-            const validPriorities = ['Low', 'Medium', 'High'];
-            const aiPriority = validPriorities.includes(data.priority) ? data.priority : formData.priority;
-            onFormChange({ ...formData, category: aiCategory, priority: aiPriority });
+            const validCats = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
+            const validPris = ['Low', 'Medium', 'High'];
+            onFormChange({
+                ...formData,
+                category: validCats.includes(data.category) ? data.category : formData.category,
+                priority: validPris.includes(data.priority) ? data.priority : formData.priority,
+            });
         }
+    };
+
+    const handleCheckDuplicates = async () => {
+        setDupDismissed(false);
+        await checkForDuplicates({
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            location: formData.location,
+        });
     };
 
     return (
@@ -49,36 +65,21 @@ export default function IssueModal({
                     </svg>
                 </button>
 
-                {/* Check if user is authenticated for reporting */}
                 {!isAuthenticated ? (
                     <div className="text-center py-6">
-                        <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
-                            🔒
-                        </div>
+                        <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🔒</div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Sign In Required</h3>
                         <p className="text-slate-600 text-xs sm:text-sm mb-6 max-w-sm mx-auto">
                             To report and track issues with your verified citizen profile, please log in or create an account.
                         </p>
                         <div className="flex items-center justify-center gap-3">
-                            <Link
-                                to="/login"
-                                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition"
-                            >
-                                Log In
-                            </Link>
-                            <Link
-                                to="/register"
-                                className="px-5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
-                            >
-                                Create Account
-                            </Link>
+                            <Link to="/login" className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition">Log In</Link>
+                            <Link to="/register" className="px-5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Create Account</Link>
                         </div>
                     </div>
                 ) : submitSuccess ? (
                     <div className="text-center py-8">
-                        <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
-                            ✓
-                        </div>
+                        <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">✓</div>
                         <h3 className="text-xl font-bold text-slate-900 mb-1">{submitSuccess}</h3>
                         <p className="text-slate-500 text-xs">Synchronized with MongoDB database.</p>
                     </div>
@@ -91,18 +92,15 @@ export default function IssueModal({
                             <h3 className="text-2xl font-bold text-slate-900 mt-2">
                                 {editingIssue ? 'Edit Issue Details' : 'Report an Issue'}
                             </h3>
-                            <p className="text-slate-500 text-xs mt-1">
-                                Directly synced with your municipal database
-                            </p>
+                            <p className="text-slate-500 text-xs mt-1">Directly synced with your municipal database</p>
                         </div>
 
                         {submitError && (
-                            <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                                {submitError}
-                            </div>
+                            <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">{submitError}</div>
                         )}
 
                         <form onSubmit={onSubmit} className="space-y-4">
+                            {/* Title */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                                     Issue Title (min 6, max 50 chars)
@@ -119,32 +117,11 @@ export default function IssueModal({
                                 />
                             </div>
 
-                            {/* Description + AI button */}
+                            {/* Description */}
                             <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="block text-xs font-semibold text-slate-700">
-                                        Description (max 500 chars)
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={handleAiClassify}
-                                        disabled={isClassifying || !formData.title.trim() || !formData.description.trim()}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                                        title="Fill in title and description first, then click to auto-classify"
-                                    >
-                                        {isClassifying ? (
-                                            <>
-                                                <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                                </svg>
-                                                Classifying...
-                                            </>
-                                        ) : (
-                                            <>✨ Suggest with AI</>
-                                        )}
-                                    </button>
-                                </div>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                    Description (max 500 chars)
+                                </label>
                                 <textarea
                                     rows="3"
                                     required
@@ -156,18 +133,90 @@ export default function IssueModal({
                                 ></textarea>
                             </div>
 
-                            {/* AI error */}
-                            {(aiError || localAiError) && (
-                                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                                    {aiError || localAiError}
+                            {/* ── AI Tools Section ── */}
+                            {!editingIssue && (
+                                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-2.5">
+                                    <p className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                                        <span>🤖</span> AI Tools
+                                    </p>
+
+                                    {/* Two AI buttons in a row */}
+                                    <div className="flex gap-2">
+                                        {/* Classify */}
+                                        <button
+                                            type="button"
+                                            onClick={handleAiClassify}
+                                            disabled={isClassifying || !canClassify}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-semibold bg-violet-600 hover:bg-violet-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                            title={!canClassify ? 'Fill in title (6+ chars) and description first' : 'Auto-detect category and priority'}
+                                        >
+                                            {isClassifying ? (
+                                                <>
+                                                    <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                    </svg>
+                                                    Classifying...
+                                                </>
+                                            ) : <>✨ Suggest Category & Priority</>}
+                                        </button>
+
+                                        {/* Check Duplicates */}
+                                        <button
+                                            type="button"
+                                            onClick={handleCheckDuplicates}
+                                            disabled={isDupChecking || !canCheckDups}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-semibold bg-orange-500 hover:bg-orange-600 text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                            title={!canCheckDups ? 'Fill in title, description, category & location first' : 'Check if a similar issue was already reported'}
+                                        >
+                                            {isDupChecking ? (
+                                                <>
+                                                    <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                    </svg>
+                                                    Checking...
+                                                </>
+                                            ) : <>🔍 Check Similar Issues</>}
+                                        </button>
+                                    </div>
+
+                                    {/* Helper text */}
+                                    <p className="text-[10px] text-indigo-500 leading-tight">
+                                        {!canClassify
+                                            ? '⬆ Fill title & description to enable AI tools'
+                                            : !canCheckDups
+                                                ? '⬆ Also fill Category & Location to enable duplicate check'
+                                                : '✓ All fields ready — both AI tools are active'}
+                                    </p>
+
+                                    {/* Classify error */}
+                                    {classifyError && (
+                                        <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px]">{classifyError}</div>
+                                    )}
+
+                                    {/* Classify result */}
+                                    {classifyResult && (
+                                        <AiSuggestionBadge result={classifyResult} onDismiss={clearClassify} />
+                                    )}
+
+                                    {/* Duplicate error */}
+                                    {dupError && !dupResult && (
+                                        <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px]">{dupError}</div>
+                                    )}
+
+                                    {/* Duplicate result */}
+                                    {dupResult && !dupDismissed && (
+                                        <AiDuplicatesPanel
+                                            result={dupResult}
+                                            onDismiss={() => { clearDupResult(); setDupDismissed(true); }}
+                                            onProceedAnyway={() => setDupDismissed(true)}
+                                        />
+                                    )}
                                 </div>
                             )}
 
-                            {/* AI result badge */}
-                            {result && (
-                                <AiSuggestionBadge result={result} onDismiss={clearResult} />
-                            )}
-
+                            {/* Category + Priority */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
@@ -184,7 +233,6 @@ export default function IssueModal({
                                         <option value="Sanitation">Sanitation</option>
                                     </select>
                                 </div>
-
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
                                     <select
@@ -199,10 +247,9 @@ export default function IssueModal({
                                 </div>
                             </div>
 
+                            {/* Location */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Location / Street Address
-                                </label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Location / Street Address</label>
                                 <input
                                     type="text"
                                     required
@@ -213,12 +260,14 @@ export default function IssueModal({
                                 />
                             </div>
 
+                            {/* Image */}
                             <IssueImageInput
                                 value={formData.image}
                                 currentImage={editingIssue?.image}
                                 onChange={(image) => onFormChange({ ...formData, image })}
                             />
 
+                            {/* Actions */}
                             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                                 <button
                                     type="button"
