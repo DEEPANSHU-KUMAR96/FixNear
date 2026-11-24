@@ -30,50 +30,77 @@ export default function DashboardTopBar({ user, onOpenSidebar, recentIssues = []
   const displayName = user?.name || (user?.email ? user.email.split('@')[0] : 'Citizen');
   const displayRole = user?.role || 'Citizen';
 
-  // Load real notifications from backend
+  const recentIssuesRef = useRef(recentIssues);
+  const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    recentIssuesRef.current = recentIssues;
+  }, [recentIssues]);
+
+  // Load real notifications from backend with live polling
   useEffect(() => {
     let isMounted = true;
 
-    fetchNotifications()
-      .then((res) => {
-        if (!isMounted) return;
-        if (res?.success && Array.isArray(res.notifications)) {
-          setNotifications(res.notifications);
-          setUnreadCount(
-            typeof res.unreadCount === 'number'
-              ? res.unreadCount
-              : res.notifications.filter((n) => !n.read).length
-          );
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        if (Array.isArray(recentIssues) && recentIssues.length > 0) {
-          const derived = recentIssues.map((issue) => ({
-            _id: issue._id,
-            title: issue.status && issue.status !== 'Reported' ? 'Status Updated' : 'Issue Reported',
-            message: issue.status && issue.status !== 'Reported'
-              ? `Your complaint "${issue.title}" is currently "${issue.status}".`
-              : `Your complaint "${issue.title}" was registered in your area.`,
-            type: issue.status && issue.status !== 'Reported' ? 'status_change' : 'issue_created',
-            read: issue.status === 'Reported',
-            createdAt: issue.updatedAt || issue.createdAt || new Date().toISOString(),
-          }));
-          setNotifications(derived);
-          setUnreadCount(derived.filter((n) => !n.read).length);
-        } else {
-          setNotifications([]);
-          setUnreadCount(0);
-        }
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+    const loadNotifications = () => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
+      fetchNotifications()
+        .then((res) => {
+          if (!isMounted) return;
+          if (res?.success && Array.isArray(res.notifications)) {
+            setNotifications(res.notifications);
+            setUnreadCount(
+              typeof res.unreadCount === 'number'
+                ? res.unreadCount
+                : res.notifications.filter((n) => !n.read).length
+            );
+          }
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          const fallback = recentIssuesRef.current;
+          if (Array.isArray(fallback) && fallback.length > 0) {
+            const derived = fallback.map((issue) => {
+              let msg = `Your complaint was registered in your area.`;
+              if (issue.status === 'In Progress') {
+                msg = 'Your complaint is now In Progress.';
+              } else if (issue.status === 'Resolved') {
+                msg = 'Your complaint has been successfully resolved.';
+              } else if (issue.status && issue.status !== 'Reported') {
+                msg = `Your complaint is now ${issue.status}.`;
+              }
+
+              return {
+                _id: issue._id,
+                title: issue.title ? `Status: ${issue.title}` : 'Issue Status Updated',
+                message: msg,
+                type: issue.status && issue.status !== 'Reported' ? 'status_change' : 'issue_created',
+                read: issue.status === 'Reported',
+                createdAt: issue.updatedAt || issue.createdAt || new Date().toISOString(),
+              };
+            });
+            setNotifications(derived);
+            setUnreadCount(derived.filter((n) => !n.read).length);
+          } else {
+            setNotifications([]);
+            setUnreadCount(0);
+          }
+        })
+        .finally(() => {
+          isFetchingRef.current = false;
+          if (isMounted) setIsLoading(false);
+        });
+    };
+
+    loadNotifications();
+    const pollInterval = setInterval(loadNotifications, 15000);
 
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
     };
-  }, [user?._id, user?.id, recentIssues]);
+  }, [user?._id]);
 
   // Close dropdown on outside click
   useEffect(() => {

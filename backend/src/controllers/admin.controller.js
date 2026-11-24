@@ -193,11 +193,7 @@ export const updateAdminIssueStatus = async (req, res) => {
     }
 
     try {
-        const issue = await Issue.findByIdAndUpdate(
-            req.params.id,
-            { status },
-            { new: true, runValidators: true }
-        ).populate("createdBy", "name email");
+        const issue = await Issue.findById(req.params.id);
 
         if (!issue) {
             return res.status(404).json({
@@ -206,14 +202,32 @@ export const updateAdminIssueStatus = async (req, res) => {
             });
         }
 
+        issue.status = status;
+        if (!Array.isArray(issue.history)) {
+            issue.history = [];
+        }
+        issue.history.push({
+            status,
+            changedAt: new Date(),
+        });
+        await issue.save();
+        await issue.populate("createdBy", "name email");
+
         // Notify the reporting citizen of status update
         if (issue.createdBy) {
             const citizenId = issue.createdBy._id || issue.createdBy;
+            let notifMessage = `Your complaint is now ${status}.`;
+            if (status === "In Progress") {
+                notifMessage = "Your complaint is now In Progress.";
+            } else if (status === "Resolved") {
+                notifMessage = "Your complaint has been successfully resolved.";
+            }
+
             try {
                 await Notification.create({
                     userId: citizenId,
-                    title: "Issue Status Updated",
-                    message: `Your complaint "${issue.title}" has been updated to "${status}".`,
+                    title: issue.title ? `Issue Updated: ${issue.title}` : "Issue Status Updated",
+                    message: notifMessage,
                     type: "status_change",
                     issueId: issue._id,
                     read: false,

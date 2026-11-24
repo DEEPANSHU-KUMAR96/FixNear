@@ -299,10 +299,18 @@ export const updateIssueStatus = async (req, res) => {
         await issue.save();
 
         if (issue.createdBy) {
+            const citizenId = issue.createdBy._id || issue.createdBy;
+            let notifMessage = `Your complaint is now ${status}.`;
+            if (status === "In Progress") {
+                notifMessage = "Your complaint is now In Progress.";
+            } else if (status === "Resolved") {
+                notifMessage = "Your complaint has been successfully resolved.";
+            }
+
             await Notification.create({
-                userId: issue.createdBy,
-                title: "Issue Status Updated",
-                message: `Your complaint "${issue.title}" status is now "${status}".`,
+                userId: citizenId,
+                title: issue.title ? `Issue Updated: ${issue.title}` : "Issue Status Updated",
+                message: notifMessage,
                 type: "status_change",
                 issueId: issue._id,
                 read: false,

@@ -6,12 +6,17 @@ import {
     deleteNotification as deleteNotificationApi,
 } from '../services/notification.service';
 
-export function useNotifications({ pollInterval = 30000, fallbackItems = [] } = {}) {
+export function useNotifications({ pollInterval = 30000, fallbackItems } = {}) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const isFetchingRef = useRef(false);
+    const fallbackRef = useRef(fallbackItems);
+
+    useEffect(() => {
+        fallbackRef.current = fallbackItems;
+    }, [fallbackItems]);
 
     const loadNotifications = useCallback(async (isSilent = false) => {
         if (isFetchingRef.current) return;
@@ -27,26 +32,36 @@ export function useNotifications({ pollInterval = 30000, fallbackItems = [] } = 
                     ? res.unreadCount
                     : res.notifications.filter((n) => !n.read).length;
                 setUnreadCount(count);
-            } else if (fallbackItems.length > 0) {
-                setNotifications(fallbackItems);
-                setUnreadCount(fallbackItems.filter((n) => !n.read).length);
+            } else if (Array.isArray(fallbackRef.current) && fallbackRef.current.length > 0) {
+                setNotifications(fallbackRef.current);
+                setUnreadCount(fallbackRef.current.filter((n) => !n.read).length);
             }
         } catch (err) {
             console.warn('Failed to load notifications:', err);
             setError(err?.message || 'Failed to fetch notifications');
+            if (Array.isArray(fallbackRef.current) && fallbackRef.current.length > 0) {
+                setNotifications(fallbackRef.current);
+                setUnreadCount(fallbackRef.current.filter((n) => !n.read).length);
+            }
         } finally {
             isFetchingRef.current = false;
             if (!isSilent) setLoading(false);
         }
-    }, [fallbackItems]);
+    }, []);
 
-    // Initial load and polling
+    // Keep ref to loadNotifications so interval doesn't reset on function change
+    const loadRef = useRef(loadNotifications);
+    useEffect(() => {
+        loadRef.current = loadNotifications;
+    }, [loadNotifications]);
+
+    // Initial load and background polling
     useEffect(() => {
         let mounted = true;
         // Asynchronous invocation avoids synchronous setState in effect
         Promise.resolve().then(() => {
             if (mounted) {
-                loadNotifications(false);
+                loadRef.current(false);
             }
         });
 
@@ -54,7 +69,7 @@ export function useNotifications({ pollInterval = 30000, fallbackItems = [] } = 
 
         const timer = setInterval(() => {
             if (mounted) {
-                loadNotifications(true);
+                loadRef.current(true);
             }
         }, pollInterval);
 
@@ -62,7 +77,7 @@ export function useNotifications({ pollInterval = 30000, fallbackItems = [] } = 
             mounted = false;
             clearInterval(timer);
         };
-    }, [pollInterval, loadNotifications]);
+    }, [pollInterval]);
 
     const markAllRead = useCallback(async () => {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

@@ -62,10 +62,17 @@ export const getNotifications = async (req, res) => {
                     const backfillDocs = [];
                     for (const issue of userIssues) {
                         if (issue.status && issue.status !== "Reported") {
+                            let notifMessage = `Your complaint is now ${issue.status}.`;
+                            if (issue.status === "In Progress") {
+                                notifMessage = "Your complaint is now In Progress.";
+                            } else if (issue.status === "Resolved") {
+                                notifMessage = "Your complaint has been successfully resolved.";
+                            }
+
                             backfillDocs.push({
                                 userId,
-                                title: "Issue Status Updated",
-                                message: `Your complaint "${issue.title}" is marked as "${issue.status}".`,
+                                title: issue.title ? `Issue Updated: ${issue.title}` : "Issue Status Updated",
+                                message: notifMessage,
                                 type: "status_change",
                                 issueId: issue._id,
                                 read: false,
