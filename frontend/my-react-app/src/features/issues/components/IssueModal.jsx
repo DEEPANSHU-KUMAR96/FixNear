@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import IssueImageInput from './IssueImageInput';
 import useAiClassify from '../../ai/hooks/useAiClassify';
 import useAiDuplicates from '../../ai/hooks/useAiDuplicates';
+import useAddressGeocoding from '../hooks/useAddressGeocoding';
 import AiSuggestionBadge from '../../ai/components/AiSuggestionBadge';
 import AiDuplicatesPanel from '../../ai/components/AiDuplicatesPanel';
+
+const MapLocationPicker = lazy(() => import('./MapLocationPicker'));
 
 export default function IssueModal({
     isOpen,
@@ -22,6 +25,59 @@ export default function IssueModal({
     const { checkForDuplicates, isChecking: isDupChecking, result: dupResult, error: dupError, clearResult: clearDupResult } = useAiDuplicates();
     const [dupDismissed, setDupDismissed] = useState(false);
     const [aiNotice, setAiNotice] = useState('');
+
+    // Geocoding auto-search state
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [searchEnabled, setSearchEnabled] = useState(false);
+    const [mapZoom, setMapZoom] = useState(16);
+    const dropdownRef = useRef(null);
+
+    const {
+        suggestions,
+        isLoading: isGeocoding,
+        error: geocodingError,
+        clearSuggestions,
+    } = useAddressGeocoding(formData.location, 600, searchEnabled);
+
+    // Close suggestions on outside click or escape
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        }
+        function handleKeyDown(e) {
+            if (e.key === 'Escape') {
+                setShowSuggestions(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+    const handleLocationInputChange = (e) => {
+        const val = e.target.value;
+        onFormChange({ ...formData, location: val });
+        setSearchEnabled(true);
+        setShowSuggestions(true);
+    };
+
+    const handleSelectSuggestion = (item) => {
+        setSearchEnabled(false);
+        setShowSuggestions(false);
+        clearSuggestions();
+        setMapZoom(16);
+        onFormChange({
+            ...formData,
+            location: item.displayName,
+            latitude: item.lat,
+            longitude: item.lon,
+        });
+    };
 
     if (!isOpen && !editingIssue) return null;
 
@@ -338,11 +394,17 @@ export default function IssueModal({
                                 </div>
                             </div>
 
-                            {/* Location */}
-                            <div>
-                                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-                                    Location / Landmark <span className="text-rose-500">*</span>
-                                </label>
+                            {/* Location / Address with Geocoding */}
+                            <div className="relative" ref={dropdownRef}>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                        Location / Landmark <span className="text-rose-500">*</span>
+                                    </label>
+                                    <span className="text-[11px] text-slate-400">
+                                        Type address to search & pin map
+                                    </span>
+                                </div>
+
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -350,16 +412,111 @@ export default function IssueModal({
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                     </div>
+
                                     <input
                                         type="text"
                                         required
                                         placeholder="e.g. 4th Cross Road, Ward 12"
                                         value={formData.location}
-                                        onChange={(e) => onFormChange({ ...formData, location: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/10 rounded-xl transition duration-150 text-slate-800 placeholder:text-slate-400"
+                                        onChange={handleLocationInputChange}
+                                        onFocus={() => {
+                                            if (suggestions.length > 0 || formData.location?.trim().length >= 3) {
+                                                setShowSuggestions(true);
+                                            }
+                                        }}
+                                        className="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/10 rounded-xl transition duration-150 text-slate-800 placeholder:text-slate-400"
                                     />
+
+                                    {/* Loading spinner */}
+                                    {isGeocoding && (
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <svg className="w-4 h-4 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                            </svg>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Address Suggestions Dropdown */}
+                                {showSuggestions && formData.location?.trim().length >= 3 && (
+                                    <div className="absolute left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto animate-fadeIn">
+                                        {isGeocoding && suggestions.length === 0 ? (
+                                            <div className="p-3 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                                                <svg className="w-3.5 h-3.5 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                                <span>Searching OpenStreetMap locations...</span>
+                                            </div>
+                                        ) : suggestions.length > 0 ? (
+                                            <>
+                                                <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                                    <span>Matching Addresses ({suggestions.length})</span>
+                                                    <span>Click to pin on map</span>
+                                                </div>
+                                                {suggestions.map((item) => (
+                                                    <button
+                                                        key={item.placeId}
+                                                        type="button"
+                                                        onClick={() => handleSelectSuggestion(item)}
+                                                        className="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50/70 transition flex items-start gap-2.5 cursor-pointer group"
+                                                    >
+                                                        <span className="text-sm mt-0.5 text-slate-400 group-hover:text-emerald-600 shrink-0">
+                                                            📍
+                                                        </span>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs font-semibold text-slate-800 group-hover:text-emerald-950 truncate">
+                                                                {item.displayName.split(',')[0]}
+                                                            </p>
+                                                            <p className="text-[11px] text-slate-500 truncate leading-snug">
+                                                                {item.displayName}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                                                Lat: {item.lat.toFixed(5)}, Lng: {item.lon.toFixed(5)}
+                                                            </p>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </>
+                                        ) : geocodingError ? (
+                                            <div className="p-3 text-center text-xs text-amber-700 bg-amber-50">
+                                                ⚠️ {geocodingError}. You can still pinpoint the location directly on the map below.
+                                            </div>
+                                        ) : (
+                                            <div className="p-3.5 text-center text-xs text-slate-500">
+                                                <p className="font-semibold text-slate-700">No matching locations found.</p>
+                                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                                    You can drop a pin directly on the interactive map below.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Map Location Picker */}
+                            <Suspense
+                                fallback={
+                                    <div className="w-full h-[240px] rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs font-medium gap-2">
+                                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        Loading map...
+                                    </div>
+                                }
+                            >
+                                <MapLocationPicker
+                                    latitude={formData.latitude}
+                                    longitude={formData.longitude}
+                                    zoom={mapZoom}
+                                    height="240px"
+                                    onChange={(lat, lng) =>
+                                        onFormChange({ ...formData, latitude: lat, longitude: lng })
+                                    }
+                                />
+                            </Suspense>
 
                             {/* Image Input */}
                             <IssueImageInput

@@ -92,6 +92,8 @@ const Home = () => {
     description: '',
     priority: 'Medium',
     image: null,
+    latitude: null,
+    longitude: null,
   });
 
   // Contact form state
@@ -167,6 +169,8 @@ const Home = () => {
           description: '',
           priority: 'Medium',
           image: null,
+          latitude: null,
+          longitude: null,
         });
         const issuesSection = document.getElementById('issues');
         if (issuesSection) {

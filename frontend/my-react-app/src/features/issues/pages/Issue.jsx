@@ -50,6 +50,8 @@ const Issue = () => {
     status: 'Reported',
     description: '',
     image: null,
+    latitude: null,
+    longitude: null,
   });
 
   // Load issues on initial mount and when tab changes
@@ -73,6 +75,8 @@ const Issue = () => {
       status: 'Reported',
       description: '',
       image: null,
+      latitude: null,
+      longitude: null,
     });
     setIsCreateModalOpen(true);
   };
@@ -81,6 +85,17 @@ const Issue = () => {
     setSubmitError('');
     setSubmitSuccess('');
     setEditingIssue(issue);
+
+    let lat = null;
+    let lng = null;
+    if (Array.isArray(issue.geoLocation?.coordinates) && issue.geoLocation.coordinates.length >= 2) {
+      lng = issue.geoLocation.coordinates[0];
+      lat = issue.geoLocation.coordinates[1];
+    } else if (issue.latitude !== undefined && issue.longitude !== undefined) {
+      lat = issue.latitude;
+      lng = issue.longitude;
+    }
+
     setFormData({
       title: issue.title || '',
       category: issue.category || 'Road',
@@ -89,6 +104,8 @@ const Issue = () => {
       status: issue.status || 'Reported',
       description: issue.description || '',
       image: null,
+      latitude: lat,
+      longitude: lng,
     });
   };
 
