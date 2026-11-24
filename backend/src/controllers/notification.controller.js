@@ -1,5 +1,6 @@
 import Notification from "../models/notification.model.js";
 import Issue from "../models/issue.model.js";
+import Contact from "../models/contact.model.js";
 
 export const getNotifications = async (req, res) => {
     try {
@@ -10,44 +11,85 @@ export const getNotifications = async (req, res) => {
             .limit(30)
             .lean();
 
-        // If no notifications exist yet, backfill from user's actual issues
+        // If no notifications exist yet, backfill
         if (notifications.length === 0) {
-            const userIssues = await Issue.find({ createdBy: userId })
-                .sort({ createdAt: -1 })
-                .limit(5)
-                .lean();
+            if (req.user.role === "admin") {
+                // Admin backfill: recent platform issues and contact inquiries
+                const [recentIssues, recentContacts] = await Promise.all([
+                    Issue.find().sort({ createdAt: -1 }).limit(10).lean(),
+                    Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
+                ]);
 
-            if (userIssues.length > 0) {
                 const backfillDocs = [];
-                for (const issue of userIssues) {
-                    if (issue.status && issue.status !== "Reported") {
-                        backfillDocs.push({
-                            userId,
-                            title: "Issue Status Updated",
-                            message: `Your complaint "${issue.title}" is marked as "${issue.status}".`,
-                            type: "status_change",
-                            issueId: issue._id,
-                            read: false,
-                            createdAt: issue.updatedAt || issue.createdAt || new Date(),
-                        });
-                    }
+                for (const issue of recentIssues) {
                     backfillDocs.push({
                         userId,
-                        title: "Issue Reported",
-                        message: `Your complaint "${issue.title}" was submitted successfully.`,
+                        title: "Civic Issue Reported",
+                        message: `Complaint "${issue.title}" at ${issue.location} (${issue.category}) - ${issue.status}.`,
                         type: "issue_created",
                         issueId: issue._id,
-                        read: true,
+                        read: false,
                         createdAt: issue.createdAt || new Date(),
                     });
                 }
 
+                for (const contact of recentContacts) {
+                    backfillDocs.push({
+                        userId,
+                        title: "Citizen Inquiry",
+                        message: `${contact.name} (${contact.email}): "${contact.message?.slice(0, 50)}${contact.message?.length > 50 ? "..." : ""}"`,
+                        type: "general",
+                        read: false,
+                        createdAt: contact.createdAt || new Date(),
+                    });
+                }
+
                 if (backfillDocs.length > 0) {
-                    await Notification.insertMany(backfillDocs);
+                    await Notification.insertMany(backfillDocs).catch(() => {});
                     notifications = await Notification.find({ userId })
                         .sort({ createdAt: -1 })
                         .limit(30)
                         .lean();
+                }
+            } else {
+                // Citizen backfill: their own reported issues
+                const userIssues = await Issue.find({ createdBy: userId })
+                    .sort({ createdAt: -1 })
+                    .limit(5)
+                    .lean();
+
+                if (userIssues.length > 0) {
+                    const backfillDocs = [];
+                    for (const issue of userIssues) {
+                        if (issue.status && issue.status !== "Reported") {
+                            backfillDocs.push({
+                                userId,
+                                title: "Issue Status Updated",
+                                message: `Your complaint "${issue.title}" is marked as "${issue.status}".`,
+                                type: "status_change",
+                                issueId: issue._id,
+                                read: false,
+                                createdAt: issue.updatedAt || issue.createdAt || new Date(),
+                            });
+                        }
+                        backfillDocs.push({
+                            userId,
+                            title: "Issue Reported",
+                            message: `Your complaint "${issue.title}" was submitted successfully.`,
+                            type: "issue_created",
+                            issueId: issue._id,
+                            read: true,
+                            createdAt: issue.createdAt || new Date(),
+                        });
+                    }
+
+                    if (backfillDocs.length > 0) {
+                        await Notification.insertMany(backfillDocs).catch(() => {});
+                        notifications = await Notification.find({ userId })
+                            .sort({ createdAt: -1 })
+                            .limit(30)
+                            .lean();
+                    }
                 }
             }
         }
@@ -56,6 +98,7 @@ export const getNotifications = async (req, res) => {
 
         return res.status(200).json({
             success: true,
+            message: "Notifications fetched successfully",
             notifications,
             unreadCount,
         });

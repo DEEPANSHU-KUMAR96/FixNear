@@ -1,5 +1,6 @@
 import Issue from "../models/issue.model.js";
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 import { uploadIssueImage } from "../services/imagekit.service.js";
 
 const uploadImageFromRequest = async (req, res) => {
@@ -53,6 +54,28 @@ export const createIssue = async (req, res) => {
             issueId: issue._id,
             read: false,
         }).catch(() => {});
+
+        // Also notify all admins about the newly submitted issue
+        try {
+            const admins = await User.find({ role: "admin" }).select("_id").lean();
+            if (admins && admins.length > 0) {
+                const adminNotifications = admins
+                    .filter((admin) => String(admin._id) !== String(req.user._id))
+                    .map((admin) => ({
+                        userId: admin._id,
+                        title: "New Civic Issue Reported",
+                        message: `New complaint "${issue.title}" reported at ${issue.location} (${issue.category}).`,
+                        type: "issue_created",
+                        issueId: issue._id,
+                        read: false,
+                    }));
+                if (adminNotifications.length > 0) {
+                    await Notification.insertMany(adminNotifications);
+                }
+            }
+        } catch (adminNotifErr) {
+            console.error("Failed to notify admins of new issue:", adminNotifErr);
+        }
 
         return res.status(201).json({
             success: true,

@@ -1,4 +1,6 @@
 import Contact from "../models/contact.model.js";
+import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 export const createContact = async (req, res) => {
     const { name, email, message } = req.body ?? {};
@@ -24,6 +26,23 @@ export const createContact = async (req, res) => {
 
     try {
         const contact = await Contact.create(contactDetails);
+
+        // Notify admins of new citizen inquiry
+        try {
+            const admins = await User.find({ role: "admin" }).select("_id").lean();
+            if (admins && admins.length > 0) {
+                const adminNotifications = admins.map((admin) => ({
+                    userId: admin._id,
+                    title: "New Citizen Inquiry",
+                    message: `${contact.name} (${contact.email}): "${contact.message.slice(0, 60)}${contact.message.length > 60 ? "..." : ""}"`,
+                    type: "general",
+                    read: false,
+                }));
+                await Notification.insertMany(adminNotifications);
+            }
+        } catch (notifErr) {
+            console.error("Failed to notify admins of inquiry:", notifErr);
+        }
 
         return res.status(201).json({
             success: true,

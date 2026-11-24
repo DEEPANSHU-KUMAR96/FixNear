@@ -190,6 +190,7 @@ const Admin = () => {
                     activeTab={activeTab}
                     onOpenSidebar={() => setSidebarOpen(true)}
                     user={user}
+                    onTabChange={setActiveTab}
                 />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

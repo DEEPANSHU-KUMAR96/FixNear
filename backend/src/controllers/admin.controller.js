@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Contact from "../models/contact.model.js";
 import Issue from "../models/issue.model.js";
 import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 
 const inquiryStatuses = ["Pending", "Reviewed", "Responded"];
 const issueStatuses = ["Reported", "In Progress", "Resolved"];
@@ -203,6 +204,23 @@ export const updateAdminIssueStatus = async (req, res) => {
                 success: false,
                 message: "Issue not found",
             });
+        }
+
+        // Notify the reporting citizen of status update
+        if (issue.createdBy) {
+            const citizenId = issue.createdBy._id || issue.createdBy;
+            try {
+                await Notification.create({
+                    userId: citizenId,
+                    title: "Issue Status Updated",
+                    message: `Your complaint "${issue.title}" has been updated to "${status}".`,
+                    type: "status_change",
+                    issueId: issue._id,
+                    read: false,
+                });
+            } catch (notifErr) {
+                console.error("Failed to notify user of status update:", notifErr);
+            }
         }
 
         return res.status(200).json({

@@ -184,7 +184,6 @@ export default function DuplicatesTab({ issues, loading, onDelete, updatingId })
         }
 
         setAiResults((prev) => ({ ...prev, ...newResults }));
-        setScanned(true);
         setScanning(false);
         setScanProgress('');
     };

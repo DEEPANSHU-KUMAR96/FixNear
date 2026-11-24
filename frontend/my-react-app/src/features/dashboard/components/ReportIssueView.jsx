@@ -41,10 +41,8 @@ export default function ReportIssueView({ onSubmit, isLoading, onCancel }) {
     }
     const data = await classify({ title: formData.title, description: formData.description });
     if (data) {
-      const validCategories = ['Road', 'Water', 'Streetlight', 'Garbage', 'Pothole', 'Sanitation'];
-      const aiCategory = validCategories.includes(data.category) ? data.category : formData.category;
-      const validPriorities = ['Low', 'Medium', 'High'];
-      const aiPriority = validPriorities.includes(data.priority) ? data.priority : formData.priority;
+      const aiCategory = CATEGORIES.includes(data.category) ? data.category : formData.category;
+      const aiPriority = PRIORITIES.includes(data.priority) ? data.priority : formData.priority;
       setFormData((prev) => ({ ...prev, category: aiCategory, priority: aiPriority }));
     }
   };
