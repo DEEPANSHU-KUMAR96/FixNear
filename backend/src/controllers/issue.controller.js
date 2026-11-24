@@ -21,13 +21,47 @@ const uploadImageFromRequest = async (req, res) => {
 };
 
 export const createIssue = async (req, res) => {
-    const { title, description, category, location, status, priority } = req.body;
+    const { title, description, category, location, status, priority, latitude,
+        longitude, } = req.body;
 
     if (!title || !description || !category || !location) {
         return res.status(400).json({
             success: false,
             message: "Title, description, category, and location are required",
         });
+    }
+    const hasLatitude = latitude !== undefined && latitude !== "";
+    const hasLongitude = longitude !== undefined && longitude !== "";
+
+    if (hasLatitude !== hasLongitude) {
+        return res.status(400).json({
+            success: false,
+            message: "Both latitude and longitude are required together",
+        });
+    }
+
+    let geoLocation;
+
+    if (hasLatitude && hasLongitude) {
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat < -90 || lat > 90 ||
+            lng < -180 || lng > 180
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid geographical coordinates",
+            });
+        }
+
+        geoLocation = {
+            type: "Point",
+            coordinates: [lng, lat],
+        };
     }
 
 
@@ -43,6 +77,7 @@ export const createIssue = async (req, res) => {
             image: uploadedImage?.url,
             status: status || "Reported",
             priority: priority || "Medium",
+            ...(geoLocation && { geoLocation }),
             createdBy: req.user._id,
         });
 
@@ -53,7 +88,7 @@ export const createIssue = async (req, res) => {
             type: "issue_created",
             issueId: issue._id,
             read: false,
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Also notify all admins about the newly submitted issue
         try {
@@ -102,7 +137,7 @@ export const getAllIssues = async (req, res) => {
     try {
         const issues = await Issue.find().sort({ _id: -1 }).populate("createdBy", "name email");
 
-        if(!issues) {
+        if (!issues) {
             return res.status(404).json({
                 success: false,
                 message: "No issues found",
@@ -126,7 +161,7 @@ export const getIssue = async (req, res) => {
     try {
         const issues = await Issue.find({ createdBy: req.user._id }).sort({ _id: -1 });
 
-        if(!issues) {
+        if (!issues) {
             return res.status(404).json({
                 success: false,
                 message: "No issues found",
@@ -314,7 +349,7 @@ export const updateIssueStatus = async (req, res) => {
                 type: "status_change",
                 issueId: issue._id,
                 read: false,
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         return res.status(200).json({
@@ -416,7 +451,7 @@ export const toggleUpvoteIssue = async (req, res) => {
                 type: "upvote",
                 issueId: issue._id,
                 read: false,
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         await issue.populate("createdBy", "name email");

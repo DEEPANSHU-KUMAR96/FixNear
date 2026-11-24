@@ -62,6 +62,13 @@ const toIssuePayload = (data) => {
     if (!payload.image) {
         delete payload.image;
     }
+    // Drop null/undefined coordinate fields so backend ignores them when not set
+    if (payload.latitude === null || payload.latitude === undefined) {
+        delete payload.latitude;
+    }
+    if (payload.longitude === null || payload.longitude === undefined) {
+        delete payload.longitude;
+    }
     return payload;
 };
 

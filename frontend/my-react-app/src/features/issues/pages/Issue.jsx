@@ -55,9 +55,9 @@ const Issue = () => {
   // Load issues on initial mount and when tab changes
   useEffect(() => {
     if (activeTab === 'my' && isAuthenticated) {
-      fetchMyIssues().catch(() => {});
+      fetchMyIssues().catch(() => { });
     } else {
-      fetchAllIssues().catch(() => {});
+      fetchAllIssues().catch(() => { });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isAuthenticated]);

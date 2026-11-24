@@ -9,6 +9,7 @@ export default function AdminSidebar({
     const navItems = [
         { tab: "Dashboard", icon: "🏠" },
         { tab: "Issues", icon: "📋" },
+        { tab: "Map View", icon: "🗺️" },
         { tab: "Duplicates", icon: "🔍" },
         { tab: "Users", icon: "👥" },
         { tab: "Inquiries", icon: "✉️" },

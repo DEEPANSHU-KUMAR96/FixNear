@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const issueSchema = mongoose.Schema({ 
+const issueSchema = mongoose.Schema({
     title: {
         type: String,
         required: [true, 'Title is required'],
@@ -25,6 +25,16 @@ const issueSchema = mongoose.Schema({
         type: String,
         required: [true, 'Location is required'],
         trim: true,
+    },
+
+    geoLocation: {
+        type: {
+            type: String,
+            enum: ["Point"],
+        },
+        coordinates: {
+            type: [Number],
+        },
     },
 
     image: {
@@ -66,13 +76,15 @@ const issueSchema = mongoose.Schema({
         type: Array,
         default: [],
     },
-    
+
     duplicateOf: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Issue',
-    default: null,
-}
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Issue',
+        default: null,
+    }
 }, { timestamps: true });
+
+issueSchema.index({ geoLocation: "2dsphere" });
 
 const Issue = mongoose.model("Issue", issueSchema);
 

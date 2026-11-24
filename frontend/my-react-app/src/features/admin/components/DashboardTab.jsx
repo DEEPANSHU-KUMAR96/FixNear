@@ -12,7 +12,7 @@ function fmtDate(iso) {
     });
 }
 
-export default function DashboardTab({ stats, issues, statsLoading, issuesLoading, statsError, issuesError }) {
+export default function DashboardTab({ stats, issues, statsLoading, issuesLoading, statsError, issuesError, onOpenMap }) {
     return (
         <div className="space-y-8">
             <ErrorBanner message={statsError} />
@@ -52,9 +52,21 @@ export default function DashboardTab({ stats, issues, statsLoading, issuesLoadin
 
             {/* Recent issues */}
             <div>
-                <h2 className="mb-3 text-base font-semibold text-slate-700">
-                    Recent Issues
-                </h2>
+                <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-base font-semibold text-slate-700">
+                        Recent Issues
+                    </h2>
+                    {typeof onOpenMap === "function" && (
+                        <button
+                            type="button"
+                            onClick={onOpenMap}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-700 transition cursor-pointer"
+                        >
+                            <span>🗺️</span>
+                            <span>Open Operations Map</span>
+                        </button>
+                    )}
+                </div>
                 {issuesLoading ? (
                     <Spinner />
                 ) : issues.length === 0 ? (

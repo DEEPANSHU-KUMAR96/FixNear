@@ -12,9 +12,24 @@ function fmtDate(iso) {
     });
 }
 
-export default function IssuesTab({ issues, loading, error, onStatusChange, onDelete, updatingId }) {
+export default function IssuesTab({ issues, loading, error, onStatusChange, onDelete, updatingId, onOpenMap }) {
     return (
         <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                    Total {issues?.length ?? 0} citizen complaints logged in system.
+                </p>
+                {typeof onOpenMap === "function" && (
+                    <button
+                        type="button"
+                        onClick={onOpenMap}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-700 transition cursor-pointer"
+                    >
+                        <span>🗺️</span>
+                        <span>Open Live Map</span>
+                    </button>
+                )}
+            </div>
             <ErrorBanner message={error} />
             {loading ? (
                 <Spinner />

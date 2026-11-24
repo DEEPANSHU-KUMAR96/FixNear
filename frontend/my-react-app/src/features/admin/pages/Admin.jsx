@@ -18,6 +18,7 @@ import IssuesTab from "../components/IssuesTab";
 import UsersTab from "../components/UsersTab";
 import InquiriesTab from "../components/InquiriesTab";
 import DuplicatesTab from "../components/DuplicatesTab";
+import AdminMapTab from "../components/AdminMapTab";
 
 const Admin = () => {
     const { isAuthenticated, user, logout } = useAuth();
@@ -202,6 +203,7 @@ const Admin = () => {
                             issuesLoading={issuesLoading}
                             statsError={statsError}
                             issuesError={issuesError}
+                            onOpenMap={() => setActiveTab("Map View")}
                         />
                     )}
                     {activeTab === "Issues" && (
@@ -211,6 +213,17 @@ const Admin = () => {
                             error={issuesError}
                             onStatusChange={handleIssueStatusChange}
                             onDelete={handleIssueDelete}
+                            updatingId={issueUpdatingId}
+                            onOpenMap={() => setActiveTab("Map View")}
+                        />
+                    )}
+                    {activeTab === "Map View" && (
+                        <AdminMapTab
+                            issues={issues}
+                            loading={issuesLoading}
+                            error={issuesError}
+                            onStatusChange={handleIssueStatusChange}
+                            onSelectIssue={() => setActiveTab("Issues")}
                             updatingId={issueUpdatingId}
                         />
                     )}
