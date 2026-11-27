@@ -251,22 +251,24 @@ export default function DuplicatesTab({ issues, loading, onDelete, updatingId })
                 </div>
 
                 {/* Category filters */}
-                <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-100">
-                    <span className="text-xs font-semibold text-slate-500 shrink-0">Category:</span>
-                    {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
-                                selectedCategory === cat
-                                    ? 'bg-slate-900 text-white font-semibold'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
+                <div className="pt-3 pb-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                        <span className="text-xs font-semibold text-slate-500 shrink-0">Category:</span>
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+                                    selectedCategory === cat
+                                        ? 'bg-slate-900 text-white font-semibold shadow-2xs'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -483,8 +485,100 @@ export default function DuplicatesTab({ issues, loading, onDelete, updatingId })
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100 text-xs">
+                {/* Mobile Card List (< md) */}
+                <div className="block md:hidden space-y-3">
+                    {issues.slice(0, 15).map((iss) => {
+                        const aiData = aiResults[iss._id];
+                        const isChecking = checkingId === iss._id;
+
+                        return (
+                            <div
+                                key={iss._id}
+                                className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-3"
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <h4 className="text-sm font-semibold text-slate-900 leading-snug flex-1 break-words">
+                                        {iss.title}
+                                    </h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => checkSingleIssueWithAi(iss)}
+                                        disabled={isChecking || scanning}
+                                        className="shrink-0 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold text-xs transition cursor-pointer"
+                                    >
+                                        {isChecking ? '...' : '✨ Check AI'}
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                    <span className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-700 text-[11px]">
+                                        📁 {iss.category}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_STYLES[iss.status] || 'bg-slate-100 text-slate-600'}`}>
+                                        {iss.status}
+                                    </span>
+                                </div>
+
+                                {iss.location && (
+                                    <p className="text-xs text-slate-500 flex items-center gap-1 break-words">
+                                        <span>📍</span>
+                                        <span>{iss.location}</span>
+                                    </p>
+                                )}
+
+                                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                                    <span className="text-slate-400 text-[11px]">AI Verification:</span>
+                                    <div>
+                                        {isChecking ? (
+                                            <span className="text-indigo-600 font-semibold text-xs animate-pulse">Checking...</span>
+                                        ) : aiData?.hasDuplicates ? (
+                                            <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full text-[11px] font-bold">
+                                                ⚠️ {aiData.duplicates.length} duplicate(s)
+                                            </span>
+                                        ) : aiData ? (
+                                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                                ✓ Unique
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-[11px]">Not checked</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {aiData?.hasDuplicates && aiData.duplicates?.length > 0 && (
+                                    <div className="pt-2 border-t border-amber-200 bg-amber-50/50 -mx-3.5 -mb-3.5 p-3 rounded-b-xl space-y-2">
+                                        <p className="text-[11px] font-bold text-amber-900">
+                                            Matching Complaints Found:
+                                        </p>
+                                        {aiData.duplicates.map((dup, dIdx) => (
+                                            <div key={dIdx} className="bg-white p-2.5 rounded-lg border border-amber-200 space-y-2 shadow-2xs">
+                                                <div>
+                                                    <div className="flex items-center justify-between gap-1">
+                                                        <span className="font-semibold text-slate-900 text-xs">{dup.title}</span>
+                                                        <span className="text-amber-700 font-bold text-[10px] shrink-0">[{dup.similarity} Match]</span>
+                                                    </div>
+                                                    <span className="text-slate-500 text-[11px] block mt-0.5">📍 {dup.location}</span>
+                                                    {dup.reason && <p className="text-[10px] text-slate-500 italic mt-0.5">{dup.reason}</p>}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(dup.issueId)}
+                                                    className="w-full py-1 bg-rose-600 text-white font-semibold rounded-md text-[11px] hover:bg-rose-700 cursor-pointer"
+                                                >
+                                                    Delete Duplicate
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Desktop & Tablet Table View (>= md) */}
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="min-w-[700px] w-full divide-y divide-slate-100 text-xs">
                         <thead className="bg-slate-50 text-slate-600">
                             <tr>
                                 <th className="px-3 py-2.5 text-left font-semibold">Title</th>
@@ -557,7 +651,7 @@ export default function DuplicatesTab({ issues, loading, onDelete, updatingId })
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleDelete(dup.issueId)}
-                                                                    className="px-2.5 py-1 bg-rose-600 text-white font-semibold rounded-md text-[10px] hover:bg-rose-700 cursor-pointer"
+                                                                    className="px-2.5 py-1 bg-rose-600 text-white font-semibold rounded-md text-[10px] hover:bg-rose-700 cursor-pointer shrink-0"
                                                                 >
                                                                     Delete Duplicate
                                                                 </button>

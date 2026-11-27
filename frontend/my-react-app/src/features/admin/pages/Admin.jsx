@@ -186,7 +186,7 @@ const Admin = () => {
                 onMobileClose={() => setSidebarOpen(false)}
             />
 
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden min-w-0">
                 <AdminTopBar
                     activeTab={activeTab}
                     onOpenSidebar={() => setSidebarOpen(true)}
@@ -194,7 +194,7 @@ const Admin = () => {
                     onTabChange={setActiveTab}
                 />
 
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 min-w-0">
                     {activeTab === "Dashboard" && (
                         <DashboardTab
                             stats={stats}
