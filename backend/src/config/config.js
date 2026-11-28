@@ -16,12 +16,6 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.JWT_REFRESH_SECRET) {
     throw new Error("JWT_REFRESH_SECRET is not defined")
 }
-if (!process.env.SMTP_USER) {
-    throw new Error("SMTP_USER is not defined")
-}
-if (!process.env.SMTP_PASS) {
-    throw new Error("SMTP_PASS is not defined")
-}
 if (!process.env.GOOGLE_CLIENT_SECRET) {
     throw new Error("GOOGLE_CLIENT_SECRET is not defined")
 }
@@ -46,14 +40,18 @@ if(!process.env.GROQ_API_KEY) {
 if(!process.env.GROQ_MODEL){
     throw new Error("GROQ_MODEL is not defined")
 }
+if(!process.env.GMAIL_REFRESH_TOKEN){
+    throw new Error("GMAIL_REFRESH_TOKEN is not defined")
+}
+if(!process.env.GMAIL_SENDER_EMAIL){
+    throw new Error("GMAIL_SENDER_EMAIL is not defined")
+}
 
 export const config = {
     PORT: process.env.PORT,
     MONGO_URI: process.env.MONGO_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
-    SMTP_USER: process.env.SMTP_USER,
-    SMTP_PASS: process.env.SMTP_PASS,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
@@ -61,6 +59,8 @@ export const config = {
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY?.trim(),
     GROQ_API_KEY: process.env.GROQ_API_KEY?.trim(),
     GROQ_MODEL: process.env.GROQ_MODEL,
+    GMAIL_REFRESH_TOKEN: process.env.GMAIL_REFRESH_TOKEN,
+    GMAIL_SENDER_EMAIL: process.env.GMAIL_SENDER_EMAIL,
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
     NODE_ENV: process.env.NODE_ENV
 };
